@@ -1,5 +1,6 @@
 #include "CustomAudioProcessor.h"
 #include "CustomAudioEditor.h"
+#include "CustomFaderBank.h"
 
 CustomAudioProcessor::CustomAudioProcessor() 
 : AudioProcessor (BusesProperties()
@@ -35,7 +36,37 @@ parameters(*this, nullptr, juce::Identifier("PARAMETERS"),
       std::make_unique<juce::AudioParameterFloat>(ParameterID { "delayAll",  1}, "delayAll",
       juce::NormalisableRange<float>(0.f, 1000.f, 0.01f),5.f),
       std::make_unique<juce::AudioParameterFloat>(ParameterID { "delayCom",  1}, "delayCom",
-      juce::NormalisableRange<float>(0.f, 1000.f, 0.01f),39.85f)
+      juce::NormalisableRange<float>(0.f, 1000.f, 0.01f),39.85f),
+      std::make_unique<juce::AudioParameterFloat>(ParameterID { "amp1",  1}, "amp1",
+      juce::NormalisableRange<float>(0.f, 1.f, 0.01f),1.f),
+      std::make_unique<juce::AudioParameterFloat>(ParameterID { "amp2",  1}, "amp2",
+      juce::NormalisableRange<float>(0.f, 1.f, 0.01f),1.f),
+      std::make_unique<juce::AudioParameterFloat>(ParameterID { "amp3",  1}, "amp3",
+      juce::NormalisableRange<float>(0.f, 1.f, 0.01f),1.f),
+      std::make_unique<juce::AudioParameterFloat>(ParameterID { "amp4",  1}, "amp4",
+      juce::NormalisableRange<float>(0.f, 1.f, 0.01f),1.f),
+      std::make_unique<juce::AudioParameterFloat>(ParameterID { "amp5",  1}, "amp5",
+      juce::NormalisableRange<float>(0.f, 1.f, 0.01f),1.f),
+      std::make_unique<juce::AudioParameterFloat>(ParameterID { "amp6",  1}, "amp6",
+      juce::NormalisableRange<float>(0.f, 1.f, 0.01f),1.f),
+      std::make_unique<juce::AudioParameterFloat>(ParameterID { "amp7",  1}, "amp7",
+      juce::NormalisableRange<float>(0.f, 1.f, 0.01f),1.f),
+      std::make_unique<juce::AudioParameterFloat>(ParameterID { "amp8",  1}, "amp8",
+      juce::NormalisableRange<float>(0.f, 1.f, 0.01f),1.f),
+      std::make_unique<juce::AudioParameterFloat>(ParameterID { "amp9",  1}, "amp9",
+      juce::NormalisableRange<float>(0.f, 1.f, 0.01f),1.f),
+      std::make_unique<juce::AudioParameterFloat>(ParameterID { "amp10",  1}, "amp1",
+      juce::NormalisableRange<float>(0.f, 1.f, 0.01f),1.f),
+      std::make_unique<juce::AudioParameterFloat>(ParameterID { "amp11",  1}, "amp11",
+      juce::NormalisableRange<float>(0.f, 1.f, 0.01f),1.f),
+      std::make_unique<juce::AudioParameterFloat>(ParameterID { "amp12",  1}, "amp12",
+      juce::NormalisableRange<float>(0.f, 1.f, 0.01f),1.f),
+      std::make_unique<juce::AudioParameterFloat>(ParameterID { "amp13",  1}, "amp13",
+      juce::NormalisableRange<float>(0.f, 1.f, 0.01f),1.f),
+      std::make_unique<juce::AudioParameterFloat>(ParameterID { "amp14",  1}, "amp14",
+      juce::NormalisableRange<float>(0.f, 1.f, 0.01f),1.f),
+      std::make_unique<juce::AudioParameterFloat>(ParameterID { "amp15",  1}, "amp15",
+      juce::NormalisableRange<float>(0.f, 1.f, 0.01f),1.f),
     }
   )
 {
@@ -92,7 +123,8 @@ void CustomAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::
 
 void CustomAudioProcessor::parameterChanged(const juce::String& parameterID, float newValue)
 {
- rnboObject.setParameterValue (apvtsParamIdToRnboParamIndex[parameterID], newValue);
+  std::cout << "Parameter Changed: " << parameterID << " New Value: " << newValue << std::endl;
+  rnboObject.setParameterValue (apvtsParamIdToRnboParamIndex[parameterID], newValue);
 }
 
 juce::AudioProcessorEditor* CustomAudioProcessor::createEditor()

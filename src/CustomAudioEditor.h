@@ -1,5 +1,6 @@
 #include "JuceHeader.h"
 #include "RNBO.h"
+#include "CustomFaderBank.h"
 
 class CustomAudioEditor : public juce::AudioProcessorEditor
 {
@@ -38,10 +39,12 @@ private:
     juce::Label  modAmpLabel;
     juce::Label  stereoModeLabel;
     juce::Label  modPanFreqLabel;
+    juce::Label  reverbLabel;
     juce::Label  mixLabel;
     juce::Label  delayAllLabel;
     juce::Label  delayComLabel;
 
+    std::unique_ptr<SliderAttachment> ampSliderAttachments[15];
     std::unique_ptr<SliderAttachment> dial1Attachment;
     std::unique_ptr<SliderAttachment> dial2Attachment;
     std::unique_ptr<SliderAttachment> dial3Attachment;
@@ -53,7 +56,20 @@ private:
     std::unique_ptr<SliderAttachment> dial9Attachment;
     std::unique_ptr<SliderAttachment> dial10Attachment;
     std::unique_ptr<SliderAttachment> dial11Attachment;
+
+    CustomFaderBank faderBank;
+    
+
+    bool isDragging = false;
+    static constexpr int numSliders = 15;
+
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> comboBoxAttachment;
+
+
+    int padding; 
+    int componentWidth1;
+    int componentWidth2;
+    int componentHeight;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CustomAudioEditor)
 };

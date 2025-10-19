@@ -2,8 +2,11 @@
 #include "CustomAudioEditor.h"
 
 CustomAudioEditor::CustomAudioEditor (CustomAudioProcessor& p, juce::AudioProcessorValueTreeState& vts)
-    : AudioProcessorEditor (&p), valueTreeState(vts)
+    : AudioProcessorEditor (&p), valueTreeState(vts), faderBank (vts, "amp")
 {
+
+    addAndMakeVisible(faderBank);
+
     addAndMakeVisible(dryWetSlider);
     dial1Attachment.reset (new SliderAttachment (valueTreeState, "dryWet", dryWetSlider));
     dryWetSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
@@ -135,6 +138,10 @@ CustomAudioEditor::CustomAudioEditor (CustomAudioProcessor& p, juce::AudioProces
     modPanFreqLabel.setText ("modPanFreq", juce::dontSendNotification);
     modPanFreqLabel.setJustificationType(juce::Justification::centred); 
 
+    addAndMakeVisible(reverbLabel);
+    reverbLabel.setText ("reverb", juce::dontSendNotification);
+    reverbLabel.setJustificationType(juce::Justification::centred); 
+
     addAndMakeVisible(mixSlider);
     dial9Attachment.reset (new SliderAttachment (valueTreeState, "mix", mixSlider));
     mixSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
@@ -164,6 +171,7 @@ CustomAudioEditor::CustomAudioEditor (CustomAudioProcessor& p, juce::AudioProces
     addAndMakeVisible(delayAllLabel);
     delayAllLabel.setText ("delayAll", juce::dontSendNotification);
     delayAllLabel.setJustificationType(juce::Justification::centred);   
+
     addAndMakeVisible(delayComSlider);
     dial11Attachment.reset (new SliderAttachment (valueTreeState, "delayCom", delayComSlider));
     delayComSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
@@ -179,36 +187,48 @@ CustomAudioEditor::CustomAudioEditor (CustomAudioProcessor& p, juce::AudioProces
     delayComLabel.setText ("delayCom", juce::dontSendNotification);
     delayComLabel.setJustificationType(juce::Justification::centred);   
     
-    setSize(800, 600);
+    setSize(900, 600);
 }
 
 void CustomAudioEditor::paint (Graphics& g)
 {
     g.fillAll(juce::Colours::darkgreen); 
+    auto area = getLocalBounds();
+    g.setColour(juce::Colours::white);
+    g.drawRect(static_cast<int>(padding * 3.5) + (componentWidth2 * 3), (area.getHeight() / 4) * 3 - 10, 
+              (componentWidth2 * 4) + (padding * 4), componentHeight + padding + 10, 2);
+
 }
 
 void CustomAudioEditor::resized()
 {
+  //  const int componentWidth2Diff = componentWidth2 / 2;
+
     auto area = getLocalBounds();
-    const int componentWidth1 = (area.getWidth() - 120) / 5;
-  //  const int componentWidth2Diff = componentWidth1 / 2;
-    const int componentHeight = (area.getHeight() - 80) / 3;
-    const int padding = 20;    
+    padding = 20; 
+    componentWidth1 = (area.getWidth() - 40) / 15;
+    componentWidth2 = (area.getWidth() - 160) / 7; 
+    componentHeight = (area.getHeight() - 100) / 4;
 
-    dryWetSlider.setBounds(padding, padding,  componentWidth1 , componentHeight);
-    binSmoothSlider.setBounds(dryWetSlider.getRight() + padding, padding,  componentWidth1 , componentHeight);
-    freqSmoothSlider.setBounds(binSmoothSlider.getRight() + padding, padding,  componentWidth1 , componentHeight);  
-    ampSmoothSlider.setBounds(freqSmoothSlider.getRight() + padding, padding,  componentWidth1 , componentHeight);
-    freqScaleSlider.setBounds(ampSmoothSlider.getRight() + padding, padding,  componentWidth1 , componentHeight);
+    //for (int i = 0; i < numSliders; ++i){
+    //    ampSliders[i].setBounds(padding + (i * componentWidth1), 2 * padding + componentHeight, componentWidth1, componentHeight);
+    //}
+    faderBank.setBounds(padding, 2 * padding + componentHeight, componentWidth1 * numSliders, componentHeight);
 
-    modFreqSlider.setBounds(padding, dryWetSlider.getBottom() + padding,  componentWidth1 , componentHeight);
-    modAmpSlider.setBounds(modFreqSlider.getRight() + padding, dryWetSlider.getBottom() + padding,  componentWidth1 , componentHeight);
-    stereoModeBox.setBounds(modAmpSlider.getRight() + padding, dryWetSlider.getBottom() + padding + 40 ,  componentWidth1 , componentHeight / 4);
-    modPanFreqSlider.setBounds(stereoModeBox.getRight() + padding, dryWetSlider.getBottom() + padding,  componentWidth1 , componentHeight);
+    dryWetSlider.setBounds(padding, faderBank.getBottom() + padding,  componentWidth2 , componentHeight);
+    binSmoothSlider.setBounds(dryWetSlider.getRight() + padding,  faderBank.getBottom() + padding,  componentWidth2 , componentHeight);
+    freqSmoothSlider.setBounds(binSmoothSlider.getRight() + padding,  faderBank.getBottom() + padding,  componentWidth2 , componentHeight);  
+    ampSmoothSlider.setBounds(freqSmoothSlider.getRight() + padding,  faderBank.getBottom() + padding,  componentWidth2 , componentHeight);
+    freqScaleSlider.setBounds(ampSmoothSlider.getRight() + padding,  faderBank.getBottom() + padding,  componentWidth2 , componentHeight);
+    modFreqSlider.setBounds(freqScaleSlider.getRight()+ padding, faderBank.getBottom() + padding,  componentWidth2 , componentHeight);
+    modAmpSlider.setBounds(modFreqSlider.getRight() + padding, faderBank.getBottom() + padding,  componentWidth2 , componentHeight);
 
-    mixSlider.setBounds(padding, modFreqSlider.getBottom() + padding,  componentWidth1 , componentHeight);
-    delayAllSlider.setBounds(mixSlider.getRight() + padding, modFreqSlider.getBottom() + padding,  componentWidth1 , componentHeight);
-    delayComSlider.setBounds(delayAllSlider.getRight() + padding, modFreqSlider.getBottom() + padding,  componentWidth1 , componentHeight);
+    stereoModeBox.setBounds(padding, dryWetSlider.getBottom() + padding + 40 ,  componentWidth2 , componentHeight / 4);
+    modPanFreqSlider.setBounds(stereoModeBox.getRight() + padding, dryWetSlider.getBottom() + padding,  componentWidth2 , componentHeight);
+    reverbLabel.setBounds(modPanFreqSlider.getRight()  + stereoModeBox.getRight() + padding, dryWetSlider.getBottom() + padding, componentWidth2, componentHeight);
+    mixSlider.setBounds(reverbLabel.getRight() + padding, dryWetSlider.getBottom() + padding,  componentWidth2 , componentHeight);
+    delayAllSlider.setBounds(mixSlider.getRight() + padding, dryWetSlider.getBottom() + padding,  componentWidth2 , componentHeight);
+    delayComSlider.setBounds(delayAllSlider.getRight() + padding, dryWetSlider.getBottom() + padding,  componentWidth2 , componentHeight);
   
 
     dryWetLabel.setBounds(dryWetSlider.getX(), dryWetSlider.getY() - 10, dryWetSlider.getWidth(), dryWetSlider.getTextBoxHeight() );

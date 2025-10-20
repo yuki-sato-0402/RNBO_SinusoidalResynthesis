@@ -1,0 +1,88 @@
+[
+  {
+    "name": "untitled",
+    "preset": {
+      "amp1": {
+        "value": 1
+      },
+      "amp10": {
+        "value": 1
+      },
+      "amp11": {
+        "value": 1
+      },
+      "amp12": {
+        "value": 1
+      },
+      "amp13": {
+        "value": 1
+      },
+      "amp14": {
+        "value": 1
+      },
+      "amp15": {
+        "value": 1
+      },
+      "amp2": {
+        "value": 1
+      },
+      "amp3": {
+        "value": 1
+      },
+      "amp4": {
+        "value": 1
+      },
+      "amp5": {
+        "value": 1
+      },
+      "amp6": {
+        "value": 1
+      },
+      "amp7": {
+        "value": 1
+      },
+      "amp8": {
+        "value": 1
+      },
+      "amp9": {
+        "value": 1
+      },
+      "ampSmooth": {
+        "value": 0.99
+      },
+      "binSmooth": {
+        "value": 0.5
+      },
+      "delayAll": {
+        "value": 5
+      },
+      "delayCom": {
+        "value": 39.85
+      },
+      "dryWet": {
+        "value": 100
+      },
+      "freqScale": {
+        "value": 1
+      },
+      "freqSmooth": {
+        "value": 0.99
+      },
+      "mix": {
+        "value": 10
+      },
+      "modAmp": {
+        "value": 10.000000000000002
+      },
+      "modFreq": {
+        "value": 1.001
+      },
+      "modPanFreq": {
+        "value": 1
+      },
+      "stereoMode": {
+        "value": 0
+      }
+    }
+  }
+]

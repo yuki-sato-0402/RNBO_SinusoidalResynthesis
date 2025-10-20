@@ -2,9 +2,10 @@
 #include "CustomAudioEditor.h"
 
 CustomAudioEditor::CustomAudioEditor (CustomAudioProcessor& p, juce::AudioProcessorValueTreeState& vts)
-    : AudioProcessorEditor (&p), valueTreeState(vts), faderBank (vts, "amp")
+    : AudioProcessorEditor (&p), valueTreeState(vts), audioProcessor(p), faderBank (vts, "amp"), spectrumDisplay (p.getSpectrumPointer(), p.getSampleRate())
 {
 
+    addAndMakeVisible(spectrumDisplay);
     addAndMakeVisible(faderBank);
 
     addAndMakeVisible(dryWetSlider);
@@ -213,7 +214,8 @@ void CustomAudioEditor::resized()
     //for (int i = 0; i < numSliders; ++i){
     //    ampSliders[i].setBounds(padding + (i * componentWidth1), 2 * padding + componentHeight, componentWidth1, componentHeight);
     //}
-    faderBank.setBounds(padding, 2 * padding + componentHeight, componentWidth1 * numSliders, componentHeight);
+    spectrumDisplay.setBounds(padding, padding, area.getWidth() - 40, componentHeight);
+    faderBank.setBounds(padding, spectrumDisplay.getBottom() + padding, area.getWidth() - 40, componentHeight);
 
     dryWetSlider.setBounds(padding, faderBank.getBottom() + padding,  componentWidth2 , componentHeight);
     binSmoothSlider.setBounds(dryWetSlider.getRight() + padding,  faderBank.getBottom() + padding,  componentWidth2 , componentHeight);

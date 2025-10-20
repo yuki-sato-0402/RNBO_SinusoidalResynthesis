@@ -32,6 +32,13 @@ public:
     const juce::String getProgramName(int index) override;
     void changeProgramName(int index, const juce::String& newName) override;
 
+    void setBufferData();
+    void updateSpectrumData(float* rnboBuffer);
+    float spectrumData[15][2];
+    const float* getSpectrumPointer() const noexcept { return &spectrumData[0][0]; }
+    const float getSampleRate() const noexcept { return static_cast<float>(rnboObject.getSampleRate()); }
+
+
     RNBO::CoreObject& getRnboObject() { return rnboObject; }
 private:
     juce::AudioProcessorValueTreeState parameters;  
@@ -40,5 +47,6 @@ private:
     std::unordered_map<juce::String, RNBO::ParameterIndex> apvtsParamIdToRnboParamIndex;
 
     RNBO::CoreObject rnboObject;
+    std::unique_ptr<float[]> RNBObuffer;
 };
 

@@ -103,6 +103,7 @@ parameters(*this, nullptr, juce::Identifier("PARAMETERS"),
 void CustomAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     rnboObject.prepareToProcess (sampleRate, static_cast<size_t> (samplesPerBlock));
+    setBufferData();
 }
  
 void CustomAudioProcessor::releaseResources()
@@ -113,12 +114,14 @@ void CustomAudioProcessor::releaseResources()
 
 void CustomAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 { 
-  juce::ignoreUnused (midiMessages);
-  rnboObject.process(
+    juce::ignoreUnused (midiMessages);
+    rnboObject.process(
                       buffer.getArrayOfWritePointers(), static_cast<RNBO::Index>(buffer.getNumChannels()),
                       buffer.getArrayOfWritePointers(), static_cast<RNBO::Index>(buffer.getNumChannels()),
                       static_cast<RNBO::Index> (buffer.getNumSamples())
-     );     
+     ); 
+     
+    updateSpectrumData(RNBObuffer.get());
 }
 
 void CustomAudioProcessor::parameterChanged(const juce::String& parameterID, float newValue)
@@ -203,5 +206,38 @@ void CustomAudioProcessor::setStateInformation (const void* data, int sizeInByte
         if (xmlState->hasTagName(parameters.state.getType()))
             parameters.replaceState(juce::ValueTree::fromXml(*xmlState));
 }
+
+void CustomAudioProcessor::setBufferData()
+{
+    constexpr int numBands = 15;
+    constexpr int numChannels = 2;
+
+    RNBObuffer = std::make_unique<float[]>(numBands * numChannels);
+
+    std::fill(RNBObuffer.get(), RNBObuffer.get() + numBands * numChannels, 0.0f);
+
+    //RNBO::Float32AudioBuffer scopeBufferType(1, this->rnboObject.getSampleRate());
+    RNBO::Float32AudioBuffer bufferType(numChannels, this->rnboObject.getSampleRate());
+
+    this->rnboObject.setExternalData(
+        "ExDetectionData",
+        reinterpret_cast<char*>(RNBObuffer.get()),
+        numBands * numChannels * sizeof(float),
+        bufferType
+    );
+}
+
+void CustomAudioProcessor::updateSpectrumData(float* rnboBuffer)
+{
+    for (int band = 0; band < 15; ++band){
+        for (int ch = 0; ch < 2; ++ch){
+            spectrumData[band][ch] = rnboBuffer[ch + (2 * band)];
+        }
+    }
+    //std::cout << "freq1: " << spectrumData[0][0] << " amp1: "  << spectrumData[0][1] << std::endl;
+    //std::cout << "freq2: " << spectrumData[1][0] << " amp2: "  << spectrumData[1][1] << std::endl;
+
+}
+
 
 

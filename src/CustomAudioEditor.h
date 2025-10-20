@@ -1,6 +1,7 @@
 #include "JuceHeader.h"
 #include "RNBO.h"
 #include "CustomFaderBank.h"
+#include "SpectrumDisplay.h"
 
 class CustomAudioEditor : public juce::AudioProcessorEditor
 {
@@ -14,6 +15,7 @@ public:
 
 private:
     juce::AudioProcessorValueTreeState& valueTreeState; // ✅ Hold by reference
+    CustomAudioProcessor& audioProcessor; // ✅ Hold by reference
     juce::Slider dryWetSlider;
     juce::Slider binSmoothSlider;
     juce::Slider freqSmoothSlider;
@@ -58,10 +60,11 @@ private:
     std::unique_ptr<SliderAttachment> dial11Attachment;
 
     CustomFaderBank faderBank;
-    
-
     bool isDragging = false;
-    static constexpr int numSliders = 15;
+
+    SpectrumDisplay spectrumDisplay;
+ 
+
 
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> comboBoxAttachment;
 

@@ -78,7 +78,7 @@ CustomAudioEditor::CustomAudioEditor (CustomAudioProcessor& p, juce::AudioProces
     freqScaleSlider.setColour(juce::Slider::textBoxOutlineColourId , juce::Colours::white);
 
     addAndMakeVisible(freqScaleLabel);
-    freqScaleLabel.setText ("freqScaleSlider", juce::dontSendNotification);
+    freqScaleLabel.setText ("freqScale", juce::dontSendNotification);
     freqScaleLabel.setJustificationType(juce::Justification::centred);
 
     addAndMakeVisible(modFreqSlider);

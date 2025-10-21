@@ -34,7 +34,10 @@ public:
             g.fillRect(x, 0, barWidth, area.getHeight());
 
             // filled bar
-            g.setColour(juce::Colours::darkgreen.withAlpha(0.75f));
+            const float t = static_cast<float>(i) / static_cast<float>(numBands - 1); // 0.0〜1.0 
+            juce::Colour c = juce::Colours::darkgreen.interpolatedWith(juce::Colours::black, t).withAlpha(0.75f);
+
+            g.setColour(c);
             g.fillRect(x, y, barWidth, height);
 
             // grid-line

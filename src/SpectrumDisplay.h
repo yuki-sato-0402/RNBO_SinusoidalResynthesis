@@ -27,10 +27,6 @@ public:
         const float minDB = -60.0f;
         const float maxDB = 0.0f;
 
-        
-
-        g.setColour(juce::Colours::darkgreen);
-
         for (int band = 0; band < numBands; band += 2)
         {
             const float freq = juce::jlimit(0.0f, sampleRate / 2, spectrumData[band]); // 0 〜 NyquistFreq
@@ -55,6 +51,9 @@ public:
             const float y = height - barHeight;
 
             //std::cout << spectrumData[band] << " spectrumData[band] " <<  band <<  std::endl;
+            const float t = static_cast<float>(band / 2) / static_cast<float>(numBands - 1); // 0.0〜1.0 
+            juce::Colour c = juce::Colours::darkgreen.interpolatedWith(juce::Colours::white, t).withAlpha(0.75f);
+            g.setColour(c);
 
             g.fillRect(x, y, width / numBands * 0.1f, barHeight);
         }

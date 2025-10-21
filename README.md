@@ -10,7 +10,7 @@ Built from the [rnbo.example.juce](https://github.com/Cycling74/rnbo.example.juc
 For *Getting Started*, please refer to the original repository. Also included in this repository is the C++ program output from RNBO in `export/`. And Max patch is included in patches/.
 
 ## Demonstration
-[Youtube<img width="1176" alt="grain" src="https://github.com/user-attachments/assets/02da2137-e503-4ff8-877f-4a52f74582e3" />](https://youtu.be/dINIlqqssl8)
+[Youtube<img width="1206" height="690" alt="Screenshot 2025-10-21 at 11 20 53" src="https://github.com/user-attachments/assets/5c61d85f-191c-4717-b473-e1d191705f2e" />](https://youtu.be/dINIlqqssl8)
 
 ## UI and parameter explanation
 - The graph shows the top 15 estimated peak frequencies.

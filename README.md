@@ -7,7 +7,7 @@ The input signal is analyzed using FFT, and the frequency data with the largest 
 I have also arranged the code to use the [AudioProcessorValueTreeState](https://docs.juce.com/master/classAudioProcessorValueTreeState.html).
 Built from the [rnbo.example.juce](https://github.com/Cycling74/rnbo.example.juce).  
 
-For *Getting Started*, please refer to the original repository. Also included in this repository is the C++ program output from RNBO in `export/`. And Max patch is included in patches/.
+For *Getting Started*, please refer to the original repository. Also included in this repository is the C++ program output from RNBO in `export/`. And Max patch is included in `patches/`.
 
 ## Demonstration
 [Youtube<img width="1206" height="690" alt="Screenshot 2025-10-21 at 11 20 53" src="https://github.com/user-attachments/assets/5c61d85f-191c-4717-b473-e1d191705f2e" />](https://youtu.be/dINIlqqssl8)

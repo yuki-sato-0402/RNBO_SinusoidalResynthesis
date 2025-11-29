@@ -89,7 +89,6 @@ rnbomatic* getTopLevelPatcher() {
 
 void cancelClockEvents()
 {
-    getEngine()->flushClockEvents(this, 2098551528, false);
 }
 
 template <typename T> void listquicksort(T& arr, T& sortindices, Int l, Int h, bool ascending) {
@@ -221,6 +220,10 @@ number scale(
 
     value = value * outdiff + lowout;
     return value;
+}
+
+number __wrapped_op_clamp(number in1, number in2, number in3) {
+    return (in1 > in3 ? in3 : (in1 < in2 ? in2 : in1));
 }
 
 number wrap(number x, number low, number high) {
@@ -465,9 +468,9 @@ void process(
     this->gen_01_perform(
         this->signals[0],
         this->signals[4],
-        this->gen_01_delayAll,
-        this->gen_01_delayCom,
         this->gen_01_mix,
+        this->gen_01_delayCom,
+        this->gen_01_delayAll,
         this->signals[3],
         this->signals[2],
         n
@@ -475,7 +478,6 @@ void process(
 
     this->dspexpr_01_perform(in1, this->signals[3], this->dspexpr_01_in3, out1, n);
     this->dspexpr_03_perform(in2, this->signals[2], this->dspexpr_03_in3, out2, n);
-    this->numbertilde_01_perform(this->zeroBuffer, this->dummyBuffer, n);
     this->stackprotect_perform(n);
     this->globaltransport_advance();
     this->audioProcessSampleCount += this->vs;
@@ -511,7 +513,6 @@ void prepareToProcess(number sampleRate, Index maxBlockSize, bool force) {
     this->gen_02_dspsetup(forceDSPSetup);
     this->gen_01_dspsetup(forceDSPSetup);
     this->data_01_dspsetup(forceDSPSetup);
-    this->numbertilde_01_dspsetup(forceDSPSetup);
     this->globaltransport_dspsetup(forceDSPSetup);
 
     if (sampleRateChanged)
@@ -2724,18 +2725,7 @@ void processParamInitEvents() {
     }
 }
 
-void processClockEvent(MillisecondTime time, ClockId index, bool hasValue, ParameterValue value) {
-    RNBO_UNUSED(hasValue);
-    this->updateTime(time);
-
-    switch (index) {
-    case 2098551528:
-        {
-        this->numbertilde_01_value_set(value);
-        break;
-        }
-    }
-}
+void processClockEvent(MillisecondTime , ClockId , bool , ParameterValue ) {}
 
 void processOutletAtCurrentTime(EngineLink* , OutletIndex , ParameterValue ) {}
 
@@ -2749,74 +2739,15 @@ void processOutletEvent(
     this->processOutletAtCurrentTime(sender, index, value);
 }
 
-void processNumMessage(MessageTag tag, MessageTag objectId, MillisecondTime time, number payload) {
-    this->updateTime(time);
+void processNumMessage(MessageTag , MessageTag , MillisecondTime , number ) {}
 
-    switch (tag) {
-    case TAG("sig"):
-        {
-        if (TAG("number~_obj-71") == objectId)
-            this->numbertilde_01_sig_number_set(payload);
-
-        break;
-        }
-    case TAG("mode"):
-        {
-        if (TAG("number~_obj-71") == objectId)
-            this->numbertilde_01_mode_set(payload);
-
-        break;
-        }
-    }
-}
-
-void processListMessage(
-    MessageTag tag,
-    MessageTag objectId,
-    MillisecondTime time,
-    const list& payload
-) {
-    this->updateTime(time);
-
-    switch (tag) {
-    case TAG("sig"):
-        {
-        if (TAG("number~_obj-71") == objectId)
-            this->numbertilde_01_sig_list_set(payload);
-
-        break;
-        }
-    }
-}
+void processListMessage(MessageTag , MessageTag , MillisecondTime , const list& ) {}
 
 void processBangMessage(MessageTag , MessageTag , MillisecondTime ) {}
 
 MessageTagInfo resolveTag(MessageTag tag) const {
     switch (tag) {
-    case TAG("monitor"):
-        {
-        return "monitor";
-        }
-    case TAG("number~_obj-71"):
-        {
-        return "number~_obj-71";
-        }
-    case TAG("assign"):
-        {
-        return "assign";
-        }
-    case TAG("setup"):
-        {
-        return "setup";
-        }
-    case TAG("sig"):
-        {
-        return "sig";
-        }
-    case TAG("mode"):
-        {
-        return "mode";
-        }
+
     }
 
     return "";
@@ -3225,24 +3156,6 @@ void param_30_value_set(number v) {
 
     this->gen_02_amp11_set(v);
 }
-
-void numbertilde_01_sig_number_set(number v) {
-    this->numbertilde_01_outValue = v;
-}
-
-void numbertilde_01_sig_list_set(const list& v) {
-    this->numbertilde_01_outValue = v[0];
-}
-
-void numbertilde_01_mode_set(number v) {
-    if (v == 1) {
-        this->numbertilde_01_currentMode = 0;
-    } else if (v == 2) {
-        this->numbertilde_01_currentMode = 1;
-    }
-}
-
-void numbertilde_01_value_set(number ) {}
 
 number msToSamps(MillisecondTime ms, number sampleRate) {
     return ms * sampleRate * 0.001;
@@ -3678,7 +3591,6 @@ void initializeObjects() {
     this->gen_02_delay2_init();
     this->gen_02_delay1_init();
     this->data_01_init();
-    this->numbertilde_01_init();
 }
 
 void sendOutlet(OutletIndex index, ParameterValue value) {
@@ -5073,8 +4985,8 @@ void gen_02_perform(
 
         number expr_116_214 = (synthesizedWaveL_212 * 1.5 > 1 ? 1 : (synthesizedWaveL_212 * 1.5 < -1 ? -1 : synthesizedWaveL_212 * 1.5));
         number expr_117_215 = (synthesizedWaveR_213 * 1.5 > 1 ? 1 : (synthesizedWaveR_213 * 1.5 < -1 ? -1 : synthesizedWaveR_213 * 1.5));
-        out2[(Index)i0] = expr_117_215;
         out1[(Index)i0] = expr_116_214;
+        out2[(Index)i0] = expr_117_215;
         this->gen_02_modPanDel_step();
         this->gen_02_modFreqDel_step();
         this->gen_02_delay15_step();
@@ -5098,78 +5010,78 @@ void gen_02_perform(
 void gen_01_perform(
     const Sample * in1,
     const Sample * in2,
-    number delayAll,
-    number delayCom,
     number mix,
+    number delayCom,
+    number delayAll,
     SampleValue * out1,
     SampleValue * out2,
     Index n
 ) {
     number div_10_0 = mix / (number)100;
-    auto scale_11_1 = this->scale(mix, 0, 100, 1, 2.25, 0.5);
+    auto scale_11_1 = this->scale(mix, 0, 100, 1, 0.175, 0.1);
     Index i;
 
     for (i = 0; i < n; i++) {
-        number div_12_2 = (scale_11_1 == 0. ? 0. : in1[(Index)i] / scale_11_1);
-        number mul_13_3 = div_12_2 * 0.9;
-        number div_14_4 = (scale_11_1 == 0. ? 0. : in2[(Index)i] / scale_11_1);
-        number mul_15_5 = div_14_4 * 0.9;
-        number mul1_6 = this->gen_01_del2_read(this->mstosamps(delayCom), 0) * 0.87;
-        number mul2_7 = this->gen_01_del3_read(this->mstosamps(delayCom), 0) * 0.87;
+        number mul_12_2 = in1[(Index)i] * scale_11_1;
+        number mul_13_3 = mul_12_2 * 0.9;
+        number mul_14_4 = in2[(Index)i] * scale_11_1;
+        number mul_15_5 = mul_14_4 * 0.9;
+        number mul1_6 = this->gen_01_del2_read(this->mstosamps(delayCom) / (number)1.321, 0) * 0.75;
+        number mul2_7 = this->gen_01_del3_read(this->mstosamps(delayCom) / (number)1.321, 0) * 0.75;
         number add2_8 = mul_13_3 + mul1_6;
         number add3_9 = mul_15_5 + mul2_7;
-        number expr_16_10 = (add2_8 > 1 ? 1 : (add2_8 < -1 ? -1 : add2_8));
-        number expr_17_11 = (add3_9 > 1 ? 1 : (add3_9 < -1 ? -1 : add3_9));
+        number expr_16_10 = this->__wrapped_op_clamp(rnbo_atan(add2_8), -1, 1);
+        number expr_17_11 = this->__wrapped_op_clamp(rnbo_atan(add3_9), -1, 1);
         this->gen_01_del2_write(add2_8 + mul_13_3);
         this->gen_01_del3_write(add3_9 + mul_15_5);
-        number mul_18_12 = this->gen_01_del_1_read(this->mstosamps(delayCom) / (number)1.321, 0) * 0.9;
-        number mul_19_13 = this->gen_01_del_2_read(this->mstosamps(delayCom) / (number)1.321, 0) * 0.9;
+        number mul_18_12 = this->gen_01_del_1_read(this->mstosamps(delayCom), 0) * 0.72;
+        number mul_19_13 = this->gen_01_del_2_read(this->mstosamps(delayCom), 0) * 0.72;
         number add_20_14 = mul_13_3 + mul_18_12;
         number add_21_15 = mul_15_5 + mul_19_13;
-        number expr_22_16 = (add_20_14 > 1 ? 1 : (add_20_14 < -1 ? -1 : add_20_14));
-        number expr_23_17 = (add_21_15 > 1 ? 1 : (add_21_15 < -1 ? -1 : add_21_15));
+        number expr_22_16 = this->__wrapped_op_clamp(rnbo_atan(add_20_14), -1, 1);
+        number expr_23_17 = this->__wrapped_op_clamp(rnbo_atan(add_21_15), -1, 1);
         this->gen_01_del_1_write(add_20_14 + mul_13_3);
         this->gen_01_del_2_write(add_21_15 + mul_15_5);
-        number mul_24_18 = this->gen_01_del_3_read(this->mstosamps(delayCom) / (number)1.103, 0) * 0.88;
-        number mul_25_19 = this->gen_01_del_4_read(this->mstosamps(delayCom) / (number)1.103, 0) * 0.88;
+        number mul_24_18 = this->gen_01_del_3_read(this->mstosamps(delayCom) / (number)1.103, 0) * 0.73;
+        number mul_25_19 = this->gen_01_del_4_read(this->mstosamps(delayCom) / (number)1.103, 0) * 0.73;
         number add_26_20 = mul_13_3 + mul_24_18;
         number add_27_21 = mul_15_5 + mul_25_19;
-        number expr_28_22 = (add_26_20 > 1 ? 1 : (add_26_20 < -1 ? -1 : add_26_20));
-        number expr_29_23 = (add_27_21 > 1 ? 1 : (add_27_21 < -1 ? -1 : add_27_21));
+        number expr_28_22 = this->__wrapped_op_clamp(rnbo_atan(add_26_20), -1, 1);
+        number expr_29_23 = this->__wrapped_op_clamp(rnbo_atan(add_27_21), -1, 1);
         this->gen_01_del_3_write(add_26_20 + mul_13_3);
         this->gen_01_del_4_write(add_27_21 + mul_15_5);
-        number mul_30_24 = this->gen_01_del_5_read(this->mstosamps(delayCom) / (number)1.197, 0) * 0.89;
-        number mul_31_25 = this->gen_01_del_6_read(this->mstosamps(delayCom) / (number)1.197, 0) * 0.89;
+        number mul_30_24 = this->gen_01_del_5_read(this->mstosamps(delayCom) / (number)1.197, 0) * 0.74;
+        number mul_31_25 = this->gen_01_del_6_read(this->mstosamps(delayCom) / (number)1.197, 0) * 0.74;
         number add_32_26 = mul_13_3 + mul_30_24;
         number add_33_27 = mul_15_5 + mul_31_25;
-        number expr_34_28 = (add_32_26 > 1 ? 1 : (add_32_26 < -1 ? -1 : add_32_26));
-        number expr_35_29 = (add_33_27 > 1 ? 1 : (add_33_27 < -1 ? -1 : add_33_27));
+        number expr_34_28 = this->__wrapped_op_clamp(rnbo_atan(add_32_26), -1, 1);
+        number expr_35_29 = this->__wrapped_op_clamp(rnbo_atan(add_33_27), -1, 1);
         this->gen_01_del_5_write(add_32_26 + mul_13_3);
         this->gen_01_del_6_write(add_33_27 + mul_15_5);
-        number add_36_30 = expr_34_28 + expr_16_10 + (expr_28_22 + expr_22_16);
-        number add_37_31 = expr_29_23 + expr_23_17 + expr_35_29 + expr_17_11 + 0;
+        number add_36_30 = expr_34_28 + expr_22_16 + (expr_28_22 + expr_16_10);
+        number add_37_31 = expr_29_23 + expr_17_11 + expr_35_29 + expr_23_17 + 0;
         number tap1_32 = this->gen_01_del_7_read(this->mstosamps(delayAll), 0);
         number tap2_33 = this->gen_01_del_7_read(this->mstosamps(delayAll), 0);
         number add1_34 = add_36_30 + tap1_32 * 0.7 * -1;
         number add_38_35 = add_37_31 + tap2_33 * 0.7 * -1;
-        number expr_39_36 = (add1_34 * 0.7 + tap1_32 > 1 ? 1 : (add1_34 * 0.7 + tap1_32 < -1 ? -1 : add1_34 * 0.7 + tap1_32));
-        number expr_40_37 = (add_38_35 * 0.7 + tap1_32 > 1 ? 1 : (add_38_35 * 0.7 + tap1_32 < -1 ? -1 : add_38_35 * 0.7 + tap1_32));
+        number expr_39_36 = (rnbo_atan(add_38_35) * 0.6 + tap1_32 > 1 ? 1 : (rnbo_atan(add_38_35) * 0.6 + tap1_32 < -1 ? -1 : rnbo_atan(add_38_35) * 0.6 + tap1_32));
+        number expr_40_37 = (rnbo_atan(add3_9) * 0.6 + tap1_32 > 1 ? 1 : (rnbo_atan(add3_9) * 0.6 + tap1_32 < -1 ? -1 : rnbo_atan(add3_9) * 0.6 + tap1_32));
         this->gen_01_del1_write(add1_34);
         this->gen_01_del_7_write(add_38_35);
         number tap_41_38 = this->gen_01_del_8_read(this->mstosamps(delayAll) / (number)2.941, 0);
         number tap_42_39 = this->gen_01_del_9_read(this->mstosamps(delayAll) / (number)2.941, 0);
         number add_43_40 = expr_39_36 + tap_41_38 * 0.7 * -1;
         number add_44_41 = expr_40_37 + tap_42_39 * 0.7 * -1;
-        number expr_45_42 = (add_43_40 * 0.7 + tap_41_38 > 1 ? 1 : (add_43_40 * 0.7 + tap_41_38 < -1 ? -1 : add_43_40 * 0.7 + tap_41_38));
-        number expr_46_43 = (add_44_41 * 0.7 + tap_41_38 > 1 ? 1 : (add_44_41 * 0.7 + tap_41_38 < -1 ? -1 : add_44_41 * 0.7 + tap_41_38));
+        number expr_45_42 = (rnbo_atan(add_44_41) * 0.6 + tap_41_38 > 1 ? 1 : (rnbo_atan(add_44_41) * 0.6 + tap_41_38 < -1 ? -1 : rnbo_atan(add_44_41) * 0.6 + tap_41_38));
+        number expr_46_43 = (rnbo_atan(add3_9) * 0.6 + tap_41_38 > 1 ? 1 : (rnbo_atan(add3_9) * 0.6 + tap_41_38 < -1 ? -1 : rnbo_atan(add3_9) * 0.6 + tap_41_38));
         this->gen_01_del_8_write(add_43_40);
         this->gen_01_del_9_write(add_44_41);
-        number add_47_44 = expr_45_42 + mul_13_3;
-        number mix_48_45 = in1[(Index)i] + div_10_0 * (add_47_44 - in1[(Index)i]);
-        out1[(Index)i] = mix_48_45;
-        number add_49_46 = expr_46_43 + mul_15_5;
-        number mix_50_47 = in2[(Index)i] + div_10_0 * (add_49_46 - in2[(Index)i]);
-        out2[(Index)i] = mix_50_47;
+        number add_47_44 = expr_46_43 + 0;
+        number mix_48_45 = in2[(Index)i] + div_10_0 * (add_47_44 - in2[(Index)i]);
+        out2[(Index)i] = mix_48_45;
+        number add_49_46 = expr_45_42 + 0;
+        number mix_50_47 = in1[(Index)i] + div_10_0 * (add_49_46 - in1[(Index)i]);
+        out1[(Index)i] = mix_50_47;
         this->gen_01_del_9_step();
         this->gen_01_del_8_step();
         this->gen_01_del_7_step();
@@ -5211,47 +5123,6 @@ void dspexpr_03_perform(
     for (i = 0; i < n; i++) {
         out1[(Index)i] = in1[(Index)i] + in3 * (in2[(Index)i] - in1[(Index)i]);//#map:_###_obj_###_:1
     }
-}
-
-void numbertilde_01_perform(const SampleValue * input_signal, SampleValue * output, Index n) {
-    auto __numbertilde_01_currentIntervalInSamples = this->numbertilde_01_currentIntervalInSamples;
-    auto __numbertilde_01_lastValue = this->numbertilde_01_lastValue;
-    auto __numbertilde_01_currentInterval = this->numbertilde_01_currentInterval;
-    auto __numbertilde_01_rampInSamples = this->numbertilde_01_rampInSamples;
-    auto __numbertilde_01_outValue = this->numbertilde_01_outValue;
-    auto __numbertilde_01_currentMode = this->numbertilde_01_currentMode;
-    number monitorvalue = input_signal[0];
-
-    for (Index i = 0; i < n; i++) {
-        if (__numbertilde_01_currentMode == 0) {
-            output[(Index)i] = this->numbertilde_01_smooth_next(
-                __numbertilde_01_outValue,
-                __numbertilde_01_rampInSamples,
-                __numbertilde_01_rampInSamples
-            );
-        } else {
-            output[(Index)i] = input_signal[(Index)i];
-        }
-    }
-
-    __numbertilde_01_currentInterval -= n;
-
-    if (monitorvalue != __numbertilde_01_lastValue && __numbertilde_01_currentInterval <= 0) {
-        __numbertilde_01_currentInterval = __numbertilde_01_currentIntervalInSamples;
-
-        this->getEngine()->scheduleClockEventWithValue(
-            this,
-            2098551528,
-            this->sampsToMs((SampleIndex)(this->vs)) + this->_currentTime,
-            monitorvalue
-        );;
-
-        __numbertilde_01_lastValue = monitorvalue;
-        this->getEngine()->sendListMessage(TAG("monitor"), TAG("number~_obj-71"), {monitorvalue}, this->_currentTime);;
-    }
-
-    this->numbertilde_01_currentInterval = __numbertilde_01_currentInterval;
-    this->numbertilde_01_lastValue = __numbertilde_01_lastValue;
 }
 
 void stackprotect_perform(Index n) {
@@ -9057,74 +8928,6 @@ void param_12_setPresetValue(PatcherStateInterface& preset) {
     this->param_12_value_set(preset["value"]);
 }
 
-number numbertilde_01_smooth_d_next(number x) {
-    number temp = (number)(x - this->numbertilde_01_smooth_d_prev);
-    this->numbertilde_01_smooth_d_prev = x;
-    return temp;
-}
-
-void numbertilde_01_smooth_d_dspsetup() {
-    this->numbertilde_01_smooth_d_reset();
-}
-
-void numbertilde_01_smooth_d_reset() {
-    this->numbertilde_01_smooth_d_prev = 0;
-}
-
-number numbertilde_01_smooth_next(number x, number up, number down) {
-    if (this->numbertilde_01_smooth_d_next(x) != 0.) {
-        if (x > this->numbertilde_01_smooth_prev) {
-            number _up = up;
-
-            if (_up < 1)
-                _up = 1;
-
-            this->numbertilde_01_smooth_index = _up;
-            this->numbertilde_01_smooth_increment = (x - this->numbertilde_01_smooth_prev) / _up;
-        } else if (x < this->numbertilde_01_smooth_prev) {
-            number _down = down;
-
-            if (_down < 1)
-                _down = 1;
-
-            this->numbertilde_01_smooth_index = _down;
-            this->numbertilde_01_smooth_increment = (x - this->numbertilde_01_smooth_prev) / _down;
-        }
-    }
-
-    if (this->numbertilde_01_smooth_index > 0) {
-        this->numbertilde_01_smooth_prev += this->numbertilde_01_smooth_increment;
-        this->numbertilde_01_smooth_index -= 1;
-    } else {
-        this->numbertilde_01_smooth_prev = x;
-    }
-
-    return this->numbertilde_01_smooth_prev;
-}
-
-void numbertilde_01_smooth_reset() {
-    this->numbertilde_01_smooth_prev = 0;
-    this->numbertilde_01_smooth_index = 0;
-    this->numbertilde_01_smooth_increment = 0;
-    this->numbertilde_01_smooth_d_reset();
-}
-
-void numbertilde_01_init() {
-    this->numbertilde_01_currentMode = 1;
-    this->getEngine()->sendNumMessage(TAG("setup"), TAG("number~_obj-71"), 1, this->_currentTime);
-}
-
-void numbertilde_01_dspsetup(bool force) {
-    if ((bool)(this->numbertilde_01_setupDone) && (bool)(!(bool)(force)))
-        return;
-
-    this->numbertilde_01_currentIntervalInSamples = this->mstosamps(100);
-    this->numbertilde_01_currentInterval = this->numbertilde_01_currentIntervalInSamples;
-    this->numbertilde_01_rampInSamples = this->mstosamps(this->numbertilde_01_ramp);
-    this->numbertilde_01_setupDone = true;
-    this->numbertilde_01_smooth_d_dspsetup();
-}
-
 void param_13_getPresetValue(PatcherStateInterface& preset) {
     preset["value"] = this->param_13_value;
 }
@@ -9563,9 +9366,9 @@ void assign_defaults()
     param_06_value = 0;
     gen_01_in1 = 0;
     gen_01_in2 = 0;
-    gen_01_delayAll = 0;
-    gen_01_delayCom = 0;
     gen_01_mix = 0;
+    gen_01_delayCom = 0;
+    gen_01_delayAll = 0;
     dspexpr_02_in1 = 0;
     dspexpr_02_in2 = 0;
     gen_02_in1 = 0;
@@ -9613,8 +9416,6 @@ void assign_defaults()
     param_10_value = 0.99;
     param_11_value = 0.5;
     param_12_value = 10;
-    numbertilde_01_input_number = 0;
-    numbertilde_01_ramp = 0;
     param_13_value = 440;
     param_14_value = 12;
     param_15_value = 0;
@@ -9850,17 +9651,6 @@ void assign_defaults()
     param_10_lastValue = 0;
     param_11_lastValue = 0;
     param_12_lastValue = 0;
-    numbertilde_01_currentInterval = 0;
-    numbertilde_01_currentIntervalInSamples = 0;
-    numbertilde_01_lastValue = 0;
-    numbertilde_01_outValue = 0;
-    numbertilde_01_rampInSamples = 0;
-    numbertilde_01_currentMode = 0;
-    numbertilde_01_smooth_d_prev = 0;
-    numbertilde_01_smooth_prev = 0;
-    numbertilde_01_smooth_index = 0;
-    numbertilde_01_smooth_increment = 0;
-    numbertilde_01_setupDone = false;
     param_13_lastValue = 0;
     param_14_lastValue = 0;
     param_15_lastValue = 0;
@@ -9911,9 +9701,9 @@ void assign_defaults()
     number param_06_value;
     number gen_01_in1;
     number gen_01_in2;
-    number gen_01_delayAll;
-    number gen_01_delayCom;
     number gen_01_mix;
+    number gen_01_delayCom;
+    number gen_01_delayAll;
     number dspexpr_02_in1;
     number dspexpr_02_in2;
     number gen_02_in1;
@@ -9961,8 +9751,6 @@ void assign_defaults()
     number param_10_value;
     number param_11_value;
     number param_12_value;
-    number numbertilde_01_input_number;
-    number numbertilde_01_ramp;
     number param_13_value;
     number param_14_value;
     number param_15_value;
@@ -10244,17 +10032,6 @@ void assign_defaults()
     number param_10_lastValue;
     number param_11_lastValue;
     number param_12_lastValue;
-    SampleIndex numbertilde_01_currentInterval;
-    SampleIndex numbertilde_01_currentIntervalInSamples;
-    number numbertilde_01_lastValue;
-    number numbertilde_01_outValue;
-    number numbertilde_01_rampInSamples;
-    Int numbertilde_01_currentMode;
-    number numbertilde_01_smooth_d_prev;
-    number numbertilde_01_smooth_prev;
-    number numbertilde_01_smooth_index;
-    number numbertilde_01_smooth_increment;
-    bool numbertilde_01_setupDone;
     number param_13_lastValue;
     number param_14_lastValue;
     number param_15_lastValue;

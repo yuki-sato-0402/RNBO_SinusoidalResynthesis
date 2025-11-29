@@ -24,6 +24,9 @@ private:
     juce::Slider modFreqSlider;
     juce::Slider modAmpSlider;
     juce::Slider modPanFreqSlider;
+    juce::ToggleButton equalTemperamentModeButton;
+    juce::Slider equalTemperamentSlider;
+    juce::Slider tuningSlider;
 
     //reverb
     juce::Slider mixSlider;
@@ -45,6 +48,8 @@ private:
     juce::Label  mixLabel;
     juce::Label  delayAllLabel;
     juce::Label  delayComLabel;
+    juce::Label  equalTemperamentLabel;
+    juce::Label  tuningLabel;
 
     std::unique_ptr<SliderAttachment> ampSliderAttachments[15];
     std::unique_ptr<SliderAttachment> dial1Attachment;
@@ -58,6 +63,9 @@ private:
     std::unique_ptr<SliderAttachment> dial9Attachment;
     std::unique_ptr<SliderAttachment> dial10Attachment;
     std::unique_ptr<SliderAttachment> dial11Attachment;
+    std::unique_ptr<SliderAttachment> dial12Attachment;
+    std::unique_ptr<SliderAttachment> dial13Attachment;
+    std::unique_ptr<ButtonAttachment> equalTemperamentModeAttachment;
 
     CustomFaderBank faderBank;
     bool isDragging = false;

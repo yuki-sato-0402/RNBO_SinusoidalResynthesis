@@ -8,7 +8,7 @@ public:
     SpectrumDisplay(const float* dataPtr, const float RNBOsampleRate)
         : spectrumData(dataPtr), sampleRate(RNBOsampleRate)
     {
-        setFramesPerSecond (30);
+        setFramesPerSecond (20);
     }
 
     void paint(juce::Graphics& g) override

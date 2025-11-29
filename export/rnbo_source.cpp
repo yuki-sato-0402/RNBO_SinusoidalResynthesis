@@ -89,6 +89,7 @@ rnbomatic* getTopLevelPatcher() {
 
 void cancelClockEvents()
 {
+    getEngine()->flushClockEvents(this, 2098551528, false);
 }
 
 template <typename T> void listquicksort(T& arr, T& sortindices, Int l, Int h, bool ascending) {
@@ -450,6 +451,9 @@ void process(
         this->gen_02_modAmp,
         this->gen_02_modFreq,
         this->gen_02_freqScale,
+        this->gen_02_tuning,
+        this->gen_02_equalTemperament,
+        this->gen_02_equalTemperamentMode,
         this->gen_02_ampSmooth,
         this->gen_02_freqSmooth,
         this->gen_02_binSmooth,
@@ -461,8 +465,8 @@ void process(
     this->gen_01_perform(
         this->signals[0],
         this->signals[4],
-        this->gen_01_delayCom,
         this->gen_01_delayAll,
+        this->gen_01_delayCom,
         this->gen_01_mix,
         this->signals[3],
         this->signals[2],
@@ -471,6 +475,7 @@ void process(
 
     this->dspexpr_01_perform(in1, this->signals[3], this->dspexpr_01_in3, out1, n);
     this->dspexpr_03_perform(in2, this->signals[2], this->dspexpr_03_in3, out2, n);
+    this->numbertilde_01_perform(this->zeroBuffer, this->dummyBuffer, n);
     this->stackprotect_perform(n);
     this->globaltransport_advance();
     this->audioProcessSampleCount += this->vs;
@@ -506,6 +511,7 @@ void prepareToProcess(number sampleRate, Index maxBlockSize, bool force) {
     this->gen_02_dspsetup(forceDSPSetup);
     this->gen_01_dspsetup(forceDSPSetup);
     this->data_01_dspsetup(forceDSPSetup);
+    this->numbertilde_01_dspsetup(forceDSPSetup);
     this->globaltransport_dspsetup(forceDSPSetup);
 
     if (sampleRateChanged)
@@ -917,7 +923,7 @@ void processDataViewUpdate(DataRefIndex index, MillisecondTime time) {
 
     if (index == 37) {
         this->gen_02_cycle_50_buffer = new Float64Buffer(this->RNBODefaultSinus);
-        this->gen_02_cycle_157_buffer = new Float64Buffer(this->RNBODefaultSinus);
+        this->gen_02_cycle_165_buffer = new Float64Buffer(this->RNBODefaultSinus);
     }
 
     if (index == 38) {
@@ -1045,7 +1051,7 @@ void initialize() {
     this->gen_02_delay1_buffer = new Float64Buffer(this->gen_02_delay1_bufferobj);
     this->RNBODefaultSinus->setIndex(37);
     this->gen_02_cycle_50_buffer = new Float64Buffer(this->RNBODefaultSinus);
-    this->gen_02_cycle_157_buffer = new Float64Buffer(this->RNBODefaultSinus);
+    this->gen_02_cycle_165_buffer = new Float64Buffer(this->RNBODefaultSinus);
     this->RNBODefaultFftWindow->setIndex(38);
     this->fftstream_tilde_01_win_buf = new Float32Buffer(this->RNBODefaultFftWindow);
     this->initializeObjects();
@@ -1083,21 +1089,24 @@ void getPreset(PatcherStateInterface& preset) {
     this->param_10_getPresetValue(getSubState(preset, "ampSmooth"));
     this->param_11_getPresetValue(getSubState(preset, "binSmooth"));
     this->param_12_getPresetValue(getSubState(preset, "modAmp"));
-    this->param_13_getPresetValue(getSubState(preset, "amp5"));
-    this->param_14_getPresetValue(getSubState(preset, "amp4"));
-    this->param_15_getPresetValue(getSubState(preset, "amp3"));
-    this->param_16_getPresetValue(getSubState(preset, "amp2"));
-    this->param_17_getPresetValue(getSubState(preset, "amp1"));
-    this->param_18_getPresetValue(getSubState(preset, "amp10"));
-    this->param_19_getPresetValue(getSubState(preset, "amp9"));
-    this->param_20_getPresetValue(getSubState(preset, "amp8"));
-    this->param_21_getPresetValue(getSubState(preset, "amp7"));
-    this->param_22_getPresetValue(getSubState(preset, "amp6"));
-    this->param_23_getPresetValue(getSubState(preset, "amp15"));
-    this->param_24_getPresetValue(getSubState(preset, "amp14"));
-    this->param_25_getPresetValue(getSubState(preset, "amp13"));
-    this->param_26_getPresetValue(getSubState(preset, "amp12"));
-    this->param_27_getPresetValue(getSubState(preset, "amp11"));
+    this->param_13_getPresetValue(getSubState(preset, "tuning"));
+    this->param_14_getPresetValue(getSubState(preset, "equalTemperament"));
+    this->param_15_getPresetValue(getSubState(preset, "equalTemperamentMode"));
+    this->param_16_getPresetValue(getSubState(preset, "amp5"));
+    this->param_17_getPresetValue(getSubState(preset, "amp4"));
+    this->param_18_getPresetValue(getSubState(preset, "amp3"));
+    this->param_19_getPresetValue(getSubState(preset, "amp2"));
+    this->param_20_getPresetValue(getSubState(preset, "amp1"));
+    this->param_21_getPresetValue(getSubState(preset, "amp10"));
+    this->param_22_getPresetValue(getSubState(preset, "amp9"));
+    this->param_23_getPresetValue(getSubState(preset, "amp8"));
+    this->param_24_getPresetValue(getSubState(preset, "amp7"));
+    this->param_25_getPresetValue(getSubState(preset, "amp6"));
+    this->param_26_getPresetValue(getSubState(preset, "amp15"));
+    this->param_27_getPresetValue(getSubState(preset, "amp14"));
+    this->param_28_getPresetValue(getSubState(preset, "amp13"));
+    this->param_29_getPresetValue(getSubState(preset, "amp12"));
+    this->param_30_getPresetValue(getSubState(preset, "amp11"));
 }
 
 void setPreset(MillisecondTime time, PatcherStateInterface& preset) {
@@ -1114,21 +1123,24 @@ void setPreset(MillisecondTime time, PatcherStateInterface& preset) {
     this->param_10_setPresetValue(getSubState(preset, "ampSmooth"));
     this->param_11_setPresetValue(getSubState(preset, "binSmooth"));
     this->param_12_setPresetValue(getSubState(preset, "modAmp"));
-    this->param_13_setPresetValue(getSubState(preset, "amp5"));
-    this->param_14_setPresetValue(getSubState(preset, "amp4"));
-    this->param_15_setPresetValue(getSubState(preset, "amp3"));
-    this->param_16_setPresetValue(getSubState(preset, "amp2"));
-    this->param_17_setPresetValue(getSubState(preset, "amp1"));
-    this->param_18_setPresetValue(getSubState(preset, "amp10"));
-    this->param_19_setPresetValue(getSubState(preset, "amp9"));
-    this->param_20_setPresetValue(getSubState(preset, "amp8"));
-    this->param_21_setPresetValue(getSubState(preset, "amp7"));
-    this->param_22_setPresetValue(getSubState(preset, "amp6"));
-    this->param_23_setPresetValue(getSubState(preset, "amp15"));
-    this->param_24_setPresetValue(getSubState(preset, "amp14"));
-    this->param_25_setPresetValue(getSubState(preset, "amp13"));
-    this->param_26_setPresetValue(getSubState(preset, "amp12"));
-    this->param_27_setPresetValue(getSubState(preset, "amp11"));
+    this->param_13_setPresetValue(getSubState(preset, "tuning"));
+    this->param_14_setPresetValue(getSubState(preset, "equalTemperament"));
+    this->param_15_setPresetValue(getSubState(preset, "equalTemperamentMode"));
+    this->param_16_setPresetValue(getSubState(preset, "amp5"));
+    this->param_17_setPresetValue(getSubState(preset, "amp4"));
+    this->param_18_setPresetValue(getSubState(preset, "amp3"));
+    this->param_19_setPresetValue(getSubState(preset, "amp2"));
+    this->param_20_setPresetValue(getSubState(preset, "amp1"));
+    this->param_21_setPresetValue(getSubState(preset, "amp10"));
+    this->param_22_setPresetValue(getSubState(preset, "amp9"));
+    this->param_23_setPresetValue(getSubState(preset, "amp8"));
+    this->param_24_setPresetValue(getSubState(preset, "amp7"));
+    this->param_25_setPresetValue(getSubState(preset, "amp6"));
+    this->param_26_setPresetValue(getSubState(preset, "amp15"));
+    this->param_27_setPresetValue(getSubState(preset, "amp14"));
+    this->param_28_setPresetValue(getSubState(preset, "amp13"));
+    this->param_29_setPresetValue(getSubState(preset, "amp12"));
+    this->param_30_setPresetValue(getSubState(preset, "amp11"));
 }
 
 void processTempoEvent(MillisecondTime time, Tempo tempo) {
@@ -1300,6 +1312,21 @@ void setParameterValue(ParameterIndex index, ParameterValue v, MillisecondTime t
         this->param_27_value_set(v);
         break;
         }
+    case 27:
+        {
+        this->param_28_value_set(v);
+        break;
+        }
+    case 28:
+        {
+        this->param_29_value_set(v);
+        break;
+        }
+    case 29:
+        {
+        this->param_30_value_set(v);
+        break;
+        }
     }
 }
 
@@ -1425,6 +1452,18 @@ ParameterValue getParameterValue(ParameterIndex index)  {
         {
         return this->param_27_value;
         }
+    case 27:
+        {
+        return this->param_28_value;
+        }
+    case 28:
+        {
+        return this->param_29_value;
+        }
+    case 29:
+        {
+        return this->param_30_value;
+        }
     default:
         {
         return 0;
@@ -1441,7 +1480,7 @@ ParameterIndex getNumSignalOutParameters() const {
 }
 
 ParameterIndex getNumParameters() const {
-    return 27;
+    return 30;
 }
 
 ConstCharPointer getParameterName(ParameterIndex index) const {
@@ -1496,61 +1535,73 @@ ConstCharPointer getParameterName(ParameterIndex index) const {
         }
     case 12:
         {
-        return "amp5";
+        return "tuning";
         }
     case 13:
         {
-        return "amp4";
+        return "equalTemperament";
         }
     case 14:
         {
-        return "amp3";
+        return "equalTemperamentMode";
         }
     case 15:
         {
-        return "amp2";
+        return "amp5";
         }
     case 16:
         {
-        return "amp1";
+        return "amp4";
         }
     case 17:
         {
-        return "amp10";
+        return "amp3";
         }
     case 18:
         {
-        return "amp9";
+        return "amp2";
         }
     case 19:
         {
-        return "amp8";
+        return "amp1";
         }
     case 20:
         {
-        return "amp7";
+        return "amp10";
         }
     case 21:
         {
-        return "amp6";
+        return "amp9";
         }
     case 22:
         {
-        return "amp15";
+        return "amp8";
         }
     case 23:
         {
-        return "amp14";
+        return "amp7";
         }
     case 24:
         {
-        return "amp13";
+        return "amp6";
         }
     case 25:
         {
-        return "amp12";
+        return "amp15";
         }
     case 26:
+        {
+        return "amp14";
+        }
+    case 27:
+        {
+        return "amp13";
+        }
+    case 28:
+        {
+        return "amp12";
+        }
+    case 29:
         {
         return "amp11";
         }
@@ -1613,61 +1664,73 @@ ConstCharPointer getParameterId(ParameterIndex index) const {
         }
     case 12:
         {
-        return "amp5";
+        return "tuning";
         }
     case 13:
         {
-        return "amp4";
+        return "equalTemperament";
         }
     case 14:
         {
-        return "amp3";
+        return "equalTemperamentMode";
         }
     case 15:
         {
-        return "amp2";
+        return "amp5";
         }
     case 16:
         {
-        return "amp1";
+        return "amp4";
         }
     case 17:
         {
-        return "amp10";
+        return "amp3";
         }
     case 18:
         {
-        return "amp9";
+        return "amp2";
         }
     case 19:
         {
-        return "amp8";
+        return "amp1";
         }
     case 20:
         {
-        return "amp7";
+        return "amp10";
         }
     case 21:
         {
-        return "amp6";
+        return "amp9";
         }
     case 22:
         {
-        return "amp15";
+        return "amp8";
         }
     case 23:
         {
-        return "amp14";
+        return "amp7";
         }
     case 24:
         {
-        return "amp13";
+        return "amp6";
         }
     case 25:
         {
-        return "amp12";
+        return "amp15";
         }
     case 26:
+        {
+        return "amp14";
+        }
+    case 27:
+        {
+        return "amp13";
+        }
+    case 28:
+        {
+        return "amp12";
+        }
+    case 29:
         {
         return "amp11";
         }
@@ -1912,9 +1975,9 @@ void getParameterInfo(ParameterIndex index, ParameterInfo * info) const {
         case 12:
             {
             info->type = ParameterTypeNumber;
-            info->initialValue = 1;
-            info->min = 0;
-            info->max = 1;
+            info->initialValue = 440;
+            info->min = 220;
+            info->max = 880;
             info->exponent = 1;
             info->steps = 0;
             info->debug = false;
@@ -1931,9 +1994,9 @@ void getParameterInfo(ParameterIndex index, ParameterInfo * info) const {
         case 13:
             {
             info->type = ParameterTypeNumber;
-            info->initialValue = 1;
-            info->min = 0;
-            info->max = 1;
+            info->initialValue = 12;
+            info->min = 2;
+            info->max = 53;
             info->exponent = 1;
             info->steps = 0;
             info->debug = false;
@@ -1950,7 +2013,7 @@ void getParameterInfo(ParameterIndex index, ParameterInfo * info) const {
         case 14:
             {
             info->type = ParameterTypeNumber;
-            info->initialValue = 1;
+            info->initialValue = 0;
             info->min = 0;
             info->max = 1;
             info->exponent = 1;
@@ -2194,6 +2257,63 @@ void getParameterInfo(ParameterIndex index, ParameterInfo * info) const {
             info->signalIndex = INVALID_INDEX;
             break;
             }
+        case 27:
+            {
+            info->type = ParameterTypeNumber;
+            info->initialValue = 1;
+            info->min = 0;
+            info->max = 1;
+            info->exponent = 1;
+            info->steps = 0;
+            info->debug = false;
+            info->saveable = true;
+            info->transmittable = true;
+            info->initialized = true;
+            info->visible = true;
+            info->displayName = "";
+            info->unit = "";
+            info->ioType = IOTypeUndefined;
+            info->signalIndex = INVALID_INDEX;
+            break;
+            }
+        case 28:
+            {
+            info->type = ParameterTypeNumber;
+            info->initialValue = 1;
+            info->min = 0;
+            info->max = 1;
+            info->exponent = 1;
+            info->steps = 0;
+            info->debug = false;
+            info->saveable = true;
+            info->transmittable = true;
+            info->initialized = true;
+            info->visible = true;
+            info->displayName = "";
+            info->unit = "";
+            info->ioType = IOTypeUndefined;
+            info->signalIndex = INVALID_INDEX;
+            break;
+            }
+        case 29:
+            {
+            info->type = ParameterTypeNumber;
+            info->initialValue = 1;
+            info->min = 0;
+            info->max = 1;
+            info->exponent = 1;
+            info->steps = 0;
+            info->debug = false;
+            info->saveable = true;
+            info->transmittable = true;
+            info->initialized = true;
+            info->visible = true;
+            info->displayName = "";
+            info->unit = "";
+            info->ioType = IOTypeUndefined;
+            info->signalIndex = INVALID_INDEX;
+            break;
+            }
         }
     }
 }
@@ -2219,8 +2339,6 @@ ParameterValue applyStepsToNormalizedParameterValue(ParameterValue normalizedVal
 ParameterValue convertToNormalizedParameterValue(ParameterIndex index, ParameterValue value) const {
     switch (index) {
     case 6:
-    case 12:
-    case 13:
     case 14:
     case 15:
     case 16:
@@ -2234,6 +2352,9 @@ ParameterValue convertToNormalizedParameterValue(ParameterIndex index, Parameter
     case 24:
     case 25:
     case 26:
+    case 27:
+    case 28:
+    case 29:
         {
         {
             value = (value < 0 ? 0 : (value > 1 ? 1 : value));
@@ -2284,6 +2405,22 @@ ParameterValue convertToNormalizedParameterValue(ParameterIndex index, Parameter
             return normalizedValue;
         }
         }
+    case 13:
+        {
+        {
+            value = (value < 2 ? 2 : (value > 53 ? 53 : value));
+            ParameterValue normalizedValue = (value - 2) / (53 - 2);
+            return normalizedValue;
+        }
+        }
+    case 12:
+        {
+        {
+            value = (value < 220 ? 220 : (value > 880 ? 880 : value));
+            ParameterValue normalizedValue = (value - 220) / (880 - 220);
+            return normalizedValue;
+        }
+        }
     case 1:
         {
         {
@@ -2313,8 +2450,6 @@ ParameterValue convertFromNormalizedParameterValue(ParameterIndex index, Paramet
 
     switch (index) {
     case 6:
-    case 12:
-    case 13:
     case 14:
     case 15:
     case 16:
@@ -2328,6 +2463,9 @@ ParameterValue convertFromNormalizedParameterValue(ParameterIndex index, Paramet
     case 24:
     case 25:
     case 26:
+    case 27:
+    case 28:
+    case 29:
         {
         {
             value = (value < 0 ? 0 : (value > 1 ? 1 : value));
@@ -2387,6 +2525,26 @@ ParameterValue convertFromNormalizedParameterValue(ParameterIndex index, Paramet
 
             {
                 return 1 + value * (100 - 1);
+            }
+        }
+        }
+    case 13:
+        {
+        {
+            value = (value < 0 ? 0 : (value > 1 ? 1 : value));
+
+            {
+                return 2 + value * (53 - 2);
+            }
+        }
+        }
+    case 12:
+        {
+        {
+            value = (value < 0 ? 0 : (value > 1 ? 1 : value));
+
+            {
+                return 220 + value * (880 - 220);
             }
         }
         }
@@ -2528,6 +2686,18 @@ ParameterValue constrainParameterValue(ParameterIndex index, ParameterValue valu
         {
         return this->param_27_value_constrain(value);
         }
+    case 27:
+        {
+        return this->param_28_value_constrain(value);
+        }
+    case 28:
+        {
+        return this->param_29_value_constrain(value);
+        }
+    case 29:
+        {
+        return this->param_30_value_constrain(value);
+        }
     default:
         {
         return value;
@@ -2554,7 +2724,18 @@ void processParamInitEvents() {
     }
 }
 
-void processClockEvent(MillisecondTime , ClockId , bool , ParameterValue ) {}
+void processClockEvent(MillisecondTime time, ClockId index, bool hasValue, ParameterValue value) {
+    RNBO_UNUSED(hasValue);
+    this->updateTime(time);
+
+    switch (index) {
+    case 2098551528:
+        {
+        this->numbertilde_01_value_set(value);
+        break;
+        }
+    }
+}
 
 void processOutletAtCurrentTime(EngineLink* , OutletIndex , ParameterValue ) {}
 
@@ -2568,15 +2749,74 @@ void processOutletEvent(
     this->processOutletAtCurrentTime(sender, index, value);
 }
 
-void processNumMessage(MessageTag , MessageTag , MillisecondTime , number ) {}
+void processNumMessage(MessageTag tag, MessageTag objectId, MillisecondTime time, number payload) {
+    this->updateTime(time);
 
-void processListMessage(MessageTag , MessageTag , MillisecondTime , const list& ) {}
+    switch (tag) {
+    case TAG("sig"):
+        {
+        if (TAG("number~_obj-71") == objectId)
+            this->numbertilde_01_sig_number_set(payload);
+
+        break;
+        }
+    case TAG("mode"):
+        {
+        if (TAG("number~_obj-71") == objectId)
+            this->numbertilde_01_mode_set(payload);
+
+        break;
+        }
+    }
+}
+
+void processListMessage(
+    MessageTag tag,
+    MessageTag objectId,
+    MillisecondTime time,
+    const list& payload
+) {
+    this->updateTime(time);
+
+    switch (tag) {
+    case TAG("sig"):
+        {
+        if (TAG("number~_obj-71") == objectId)
+            this->numbertilde_01_sig_list_set(payload);
+
+        break;
+        }
+    }
+}
 
 void processBangMessage(MessageTag , MessageTag , MillisecondTime ) {}
 
 MessageTagInfo resolveTag(MessageTag tag) const {
     switch (tag) {
-
+    case TAG("monitor"):
+        {
+        return "monitor";
+        }
+    case TAG("number~_obj-71"):
+        {
+        return "number~_obj-71";
+        }
+    case TAG("assign"):
+        {
+        return "assign";
+        }
+    case TAG("setup"):
+        {
+        return "setup";
+        }
+    case TAG("sig"):
+        {
+        return "sig";
+        }
+    case TAG("mode"):
+        {
+        return "mode";
+        }
     }
 
     return "";
@@ -2762,7 +3002,7 @@ void param_13_value_set(number v) {
         this->param_13_lastValue = this->param_13_value;
     }
 
-    this->gen_02_amp5_set(v);
+    this->gen_02_tuning_set(v);
 }
 
 void param_14_value_set(number v) {
@@ -2775,7 +3015,7 @@ void param_14_value_set(number v) {
         this->param_14_lastValue = this->param_14_value;
     }
 
-    this->gen_02_amp4_set(v);
+    this->gen_02_equalTemperament_set(v);
 }
 
 void param_15_value_set(number v) {
@@ -2788,7 +3028,7 @@ void param_15_value_set(number v) {
         this->param_15_lastValue = this->param_15_value;
     }
 
-    this->gen_02_amp3_set(v);
+    this->gen_02_equalTemperamentMode_set(v);
 }
 
 void param_16_value_set(number v) {
@@ -2801,7 +3041,7 @@ void param_16_value_set(number v) {
         this->param_16_lastValue = this->param_16_value;
     }
 
-    this->gen_02_amp2_set(v);
+    this->gen_02_amp5_set(v);
 }
 
 void param_17_value_set(number v) {
@@ -2814,7 +3054,7 @@ void param_17_value_set(number v) {
         this->param_17_lastValue = this->param_17_value;
     }
 
-    this->gen_02_amp1_set(v);
+    this->gen_02_amp4_set(v);
 }
 
 void param_18_value_set(number v) {
@@ -2827,7 +3067,7 @@ void param_18_value_set(number v) {
         this->param_18_lastValue = this->param_18_value;
     }
 
-    this->gen_02_amp10_set(v);
+    this->gen_02_amp3_set(v);
 }
 
 void param_19_value_set(number v) {
@@ -2840,7 +3080,7 @@ void param_19_value_set(number v) {
         this->param_19_lastValue = this->param_19_value;
     }
 
-    this->gen_02_amp9_set(v);
+    this->gen_02_amp2_set(v);
 }
 
 void param_20_value_set(number v) {
@@ -2853,7 +3093,7 @@ void param_20_value_set(number v) {
         this->param_20_lastValue = this->param_20_value;
     }
 
-    this->gen_02_amp8_set(v);
+    this->gen_02_amp1_set(v);
 }
 
 void param_21_value_set(number v) {
@@ -2866,7 +3106,7 @@ void param_21_value_set(number v) {
         this->param_21_lastValue = this->param_21_value;
     }
 
-    this->gen_02_amp7_set(v);
+    this->gen_02_amp10_set(v);
 }
 
 void param_22_value_set(number v) {
@@ -2879,7 +3119,7 @@ void param_22_value_set(number v) {
         this->param_22_lastValue = this->param_22_value;
     }
 
-    this->gen_02_amp6_set(v);
+    this->gen_02_amp9_set(v);
 }
 
 void param_23_value_set(number v) {
@@ -2892,7 +3132,7 @@ void param_23_value_set(number v) {
         this->param_23_lastValue = this->param_23_value;
     }
 
-    this->gen_02_amp15_set(v);
+    this->gen_02_amp8_set(v);
 }
 
 void param_24_value_set(number v) {
@@ -2905,7 +3145,7 @@ void param_24_value_set(number v) {
         this->param_24_lastValue = this->param_24_value;
     }
 
-    this->gen_02_amp14_set(v);
+    this->gen_02_amp7_set(v);
 }
 
 void param_25_value_set(number v) {
@@ -2918,7 +3158,7 @@ void param_25_value_set(number v) {
         this->param_25_lastValue = this->param_25_value;
     }
 
-    this->gen_02_amp13_set(v);
+    this->gen_02_amp6_set(v);
 }
 
 void param_26_value_set(number v) {
@@ -2931,7 +3171,7 @@ void param_26_value_set(number v) {
         this->param_26_lastValue = this->param_26_value;
     }
 
-    this->gen_02_amp12_set(v);
+    this->gen_02_amp15_set(v);
 }
 
 void param_27_value_set(number v) {
@@ -2944,8 +3184,65 @@ void param_27_value_set(number v) {
         this->param_27_lastValue = this->param_27_value;
     }
 
+    this->gen_02_amp14_set(v);
+}
+
+void param_28_value_set(number v) {
+    v = this->param_28_value_constrain(v);
+    this->param_28_value = v;
+    this->sendParameter(27, false);
+
+    if (this->param_28_value != this->param_28_lastValue) {
+        this->getEngine()->presetTouched();
+        this->param_28_lastValue = this->param_28_value;
+    }
+
+    this->gen_02_amp13_set(v);
+}
+
+void param_29_value_set(number v) {
+    v = this->param_29_value_constrain(v);
+    this->param_29_value = v;
+    this->sendParameter(28, false);
+
+    if (this->param_29_value != this->param_29_lastValue) {
+        this->getEngine()->presetTouched();
+        this->param_29_lastValue = this->param_29_value;
+    }
+
+    this->gen_02_amp12_set(v);
+}
+
+void param_30_value_set(number v) {
+    v = this->param_30_value_constrain(v);
+    this->param_30_value = v;
+    this->sendParameter(29, false);
+
+    if (this->param_30_value != this->param_30_lastValue) {
+        this->getEngine()->presetTouched();
+        this->param_30_lastValue = this->param_30_value;
+    }
+
     this->gen_02_amp11_set(v);
 }
+
+void numbertilde_01_sig_number_set(number v) {
+    this->numbertilde_01_outValue = v;
+}
+
+void numbertilde_01_sig_list_set(const list& v) {
+    this->numbertilde_01_outValue = v[0];
+}
+
+void numbertilde_01_mode_set(number v) {
+    if (v == 1) {
+        this->numbertilde_01_currentMode = 0;
+    } else if (v == 2) {
+        this->numbertilde_01_currentMode = 1;
+    }
+}
+
+void numbertilde_01_value_set(number ) {}
 
 number msToSamps(MillisecondTime ms, number sampleRate) {
     return ms * sampleRate * 0.001;
@@ -2992,8 +3289,8 @@ void allocateDataRefs() {
     this->gen_02_currentRadius->setSampleRate(this->sr);
     this->gen_02_cycle_50_buffer->requestSize(16384, 1);
     this->gen_02_cycle_50_buffer->setSampleRate(this->sr);
-    this->gen_02_cycle_157_buffer->requestSize(16384, 1);
-    this->gen_02_cycle_157_buffer->setSampleRate(this->sr);
+    this->gen_02_cycle_165_buffer->requestSize(16384, 1);
+    this->gen_02_cycle_165_buffer->setSampleRate(this->sr);
     this->gen_01_del_9_buffer = this->gen_01_del_9_buffer->allocateIfNeeded();
 
     if (this->gen_01_del_9_bufferobj->hasRequestedSize()) {
@@ -3330,7 +3627,7 @@ void allocateDataRefs() {
     }
 
     this->gen_02_cycle_50_buffer = this->gen_02_cycle_50_buffer->allocateIfNeeded();
-    this->gen_02_cycle_157_buffer = this->gen_02_cycle_157_buffer->allocateIfNeeded();
+    this->gen_02_cycle_165_buffer = this->gen_02_cycle_165_buffer->allocateIfNeeded();
 
     if (this->RNBODefaultSinus->hasRequestedSize()) {
         if (this->RNBODefaultSinus->wantsFill())
@@ -3381,6 +3678,7 @@ void initializeObjects() {
     this->gen_02_delay2_init();
     this->gen_02_delay1_init();
     this->data_01_init();
+    this->numbertilde_01_init();
 }
 
 void sendOutlet(OutletIndex index, ParameterValue value) {
@@ -3496,6 +3794,18 @@ void startup() {
 
     {
         this->scheduleParamInit(26, 0);
+    }
+
+    {
+        this->scheduleParamInit(27, 0);
+    }
+
+    {
+        this->scheduleParamInit(28, 0);
+    }
+
+    {
+        this->scheduleParamInit(29, 0);
     }
 
     this->processParamInitEvents();
@@ -3628,6 +3938,33 @@ void gen_02_modAmp_set(number v) {
 }
 
 static number param_13_value_constrain(number v) {
+    v = (v > 880 ? 880 : (v < 220 ? 220 : v));
+    return v;
+}
+
+void gen_02_tuning_set(number v) {
+    this->gen_02_tuning = v;
+}
+
+static number param_14_value_constrain(number v) {
+    v = (v > 53 ? 53 : (v < 2 ? 2 : v));
+    return v;
+}
+
+void gen_02_equalTemperament_set(number v) {
+    this->gen_02_equalTemperament = v;
+}
+
+static number param_15_value_constrain(number v) {
+    v = (v > 1 ? 1 : (v < 0 ? 0 : v));
+    return v;
+}
+
+void gen_02_equalTemperamentMode_set(number v) {
+    this->gen_02_equalTemperamentMode = v;
+}
+
+static number param_16_value_constrain(number v) {
     v = (v > 1 ? 1 : (v < 0 ? 0 : v));
     return v;
 }
@@ -3636,7 +3973,7 @@ void gen_02_amp5_set(number v) {
     this->gen_02_amp5 = v;
 }
 
-static number param_14_value_constrain(number v) {
+static number param_17_value_constrain(number v) {
     v = (v > 1 ? 1 : (v < 0 ? 0 : v));
     return v;
 }
@@ -3645,7 +3982,7 @@ void gen_02_amp4_set(number v) {
     this->gen_02_amp4 = v;
 }
 
-static number param_15_value_constrain(number v) {
+static number param_18_value_constrain(number v) {
     v = (v > 1 ? 1 : (v < 0 ? 0 : v));
     return v;
 }
@@ -3654,7 +3991,7 @@ void gen_02_amp3_set(number v) {
     this->gen_02_amp3 = v;
 }
 
-static number param_16_value_constrain(number v) {
+static number param_19_value_constrain(number v) {
     v = (v > 1 ? 1 : (v < 0 ? 0 : v));
     return v;
 }
@@ -3663,7 +4000,7 @@ void gen_02_amp2_set(number v) {
     this->gen_02_amp2 = v;
 }
 
-static number param_17_value_constrain(number v) {
+static number param_20_value_constrain(number v) {
     v = (v > 1 ? 1 : (v < 0 ? 0 : v));
     return v;
 }
@@ -3672,7 +4009,7 @@ void gen_02_amp1_set(number v) {
     this->gen_02_amp1 = v;
 }
 
-static number param_18_value_constrain(number v) {
+static number param_21_value_constrain(number v) {
     v = (v > 1 ? 1 : (v < 0 ? 0 : v));
     return v;
 }
@@ -3681,7 +4018,7 @@ void gen_02_amp10_set(number v) {
     this->gen_02_amp10 = v;
 }
 
-static number param_19_value_constrain(number v) {
+static number param_22_value_constrain(number v) {
     v = (v > 1 ? 1 : (v < 0 ? 0 : v));
     return v;
 }
@@ -3690,7 +4027,7 @@ void gen_02_amp9_set(number v) {
     this->gen_02_amp9 = v;
 }
 
-static number param_20_value_constrain(number v) {
+static number param_23_value_constrain(number v) {
     v = (v > 1 ? 1 : (v < 0 ? 0 : v));
     return v;
 }
@@ -3699,7 +4036,7 @@ void gen_02_amp8_set(number v) {
     this->gen_02_amp8 = v;
 }
 
-static number param_21_value_constrain(number v) {
+static number param_24_value_constrain(number v) {
     v = (v > 1 ? 1 : (v < 0 ? 0 : v));
     return v;
 }
@@ -3708,7 +4045,7 @@ void gen_02_amp7_set(number v) {
     this->gen_02_amp7 = v;
 }
 
-static number param_22_value_constrain(number v) {
+static number param_25_value_constrain(number v) {
     v = (v > 1 ? 1 : (v < 0 ? 0 : v));
     return v;
 }
@@ -3717,7 +4054,7 @@ void gen_02_amp6_set(number v) {
     this->gen_02_amp6 = v;
 }
 
-static number param_23_value_constrain(number v) {
+static number param_26_value_constrain(number v) {
     v = (v > 1 ? 1 : (v < 0 ? 0 : v));
     return v;
 }
@@ -3726,7 +4063,7 @@ void gen_02_amp15_set(number v) {
     this->gen_02_amp15 = v;
 }
 
-static number param_24_value_constrain(number v) {
+static number param_27_value_constrain(number v) {
     v = (v > 1 ? 1 : (v < 0 ? 0 : v));
     return v;
 }
@@ -3735,7 +4072,7 @@ void gen_02_amp14_set(number v) {
     this->gen_02_amp14 = v;
 }
 
-static number param_25_value_constrain(number v) {
+static number param_28_value_constrain(number v) {
     v = (v > 1 ? 1 : (v < 0 ? 0 : v));
     return v;
 }
@@ -3744,7 +4081,7 @@ void gen_02_amp13_set(number v) {
     this->gen_02_amp13 = v;
 }
 
-static number param_26_value_constrain(number v) {
+static number param_29_value_constrain(number v) {
     v = (v > 1 ? 1 : (v < 0 ? 0 : v));
     return v;
 }
@@ -3753,7 +4090,7 @@ void gen_02_amp12_set(number v) {
     this->gen_02_amp12 = v;
 }
 
-static number param_27_value_constrain(number v) {
+static number param_30_value_constrain(number v) {
     v = (v > 1 ? 1 : (v < 0 ? 0 : v));
     return v;
 }
@@ -3838,6 +4175,9 @@ void gen_02_perform(
     number modAmp,
     number modFreq,
     number freqScale,
+    number tuning,
+    number equalTemperament,
+    number equalTemperamentMode,
     number ampSmooth,
     number freqSmooth,
     number binSmooth,
@@ -4123,7 +4463,7 @@ void gen_02_perform(
             this->poke_default(this->gen_02_detectionData, peek_14 / (number)512, i, 1, 0);
         }
 
-        for (number i = 0; i < 15; i = i + 1) {
+        for (number i = 0; i < this->dim(this->gen_02_currentRadius); i = i + 1) {
             number smoothedFreq = 0;
             auto result_44 = this->peek_default(this->gen_02_detectionData, i, 0);
             smoothedFreq = result_44[0];
@@ -4210,617 +4550,531 @@ void gen_02_perform(
         );
 
         number modFreqVal15_66 = this->gen_02_modFreqDel_read(((modFreq == 0. ? 0. : this->samplerate() / modFreq)) * 1, 0);
-        number peek_20 = 0;
-        number peek_21 = 0;
-        auto result_67 = this->peek_default(this->gen_02_detectionData, 0, 0);
-        peek_21 = result_67[1];
-        peek_20 = result_67[0];
 
-        this->poke_default(
-            this->gen_02_detectionData,
-            peek_20 * freqScale + modFreqVal1_52 * modAmp,
-            0,
-            0,
-            0
-        );
+        for (number i = 0; i < this->dim(this->gen_02_currentRadius); i = i + 1) {
+            if (equalTemperamentMode == 1) {
+                number peek_20 = 0;
+                number peek_21 = 0;
+                auto result_67 = this->peek_default(this->gen_02_detectionData, i, 0);
+                peek_21 = result_67[1];
+                peek_20 = result_67[0];
+                number calEqualTemperamentPitch_68 = 0;
 
-        number peek_22 = 0;
-        number peek_23 = 0;
-        auto result_68 = this->peek_default(this->gen_02_detectionData, 0, 1);
-        peek_23 = result_68[1];
-        peek_22 = result_68[0];
-        this->poke_default(this->gen_02_detectionData, peek_22 * amp1, 0, 1, 0);
-        number applyFreq1 = 0;
-        auto result_69 = this->peek_default(this->gen_02_detectionData, 0, 0);
-        applyFreq1 = result_69[0];
+                {
+                    auto F_71 = tuning;
+                    auto N_70 = equalTemperament;
+                    auto input_69 = peek_20 * freqScale;
+
+                    number n_72 = rnbo_fround(
+                        N_70 * ((((F_71 == 0. ? 0. : input_69 / F_71)) <= 0 ? 0 : rnbo_log2((F_71 == 0. ? 0. : input_69 / F_71)))) * 1 / (number)1
+                    ) * 1;
+
+                    number mappedFreq_73 = F_71 * fixnan(rnbo_pow(2, (N_70 == 0. ? 0. : n_72 / N_70)));
+                    calEqualTemperamentPitch_68 = mappedFreq_73;
+                }
+
+                this->poke_default(this->gen_02_detectionData, calEqualTemperamentPitch_68, i, 0, 0);
+            } else {
+                number peek_22 = 0;
+                number peek_23 = 0;
+                auto result_74 = this->peek_default(this->gen_02_detectionData, i, 0);
+                peek_23 = result_74[1];
+                peek_22 = result_74[0];
+                this->poke_default(this->gen_02_detectionData, peek_22 * freqScale, i, 0, 0);
+            }
+        }
+
         number peek_24 = 0;
         number peek_25 = 0;
-        auto result_70 = this->peek_default(this->gen_02_detectionData, 0, 1);
-        peek_25 = result_70[1];
-        peek_24 = result_70[0];
-
-        number ampedWave1_72 = rnbo_sin(
-            this->gen_02_phasor_71_next(applyFreq1, 0) * 6.28318530717958647692 - 3.14159265358979323846
-        ) * peek_24;
-
+        auto result_75 = this->peek_default(this->gen_02_detectionData, 0, 0);
+        peek_25 = result_75[1];
+        peek_24 = result_75[0];
+        this->poke_default(this->gen_02_detectionData, peek_24 + modFreqVal1_52 * modAmp, 0, 0, 0);
         number peek_26 = 0;
         number peek_27 = 0;
-        auto result_73 = this->peek_default(this->gen_02_detectionData, 1, 0);
-        peek_27 = result_73[1];
-        peek_26 = result_73[0];
-
-        this->poke_default(
-            this->gen_02_detectionData,
-            peek_26 * freqScale + modFreqVal2_53 * modAmp,
-            1,
-            0,
-            0
-        );
-
+        auto result_76 = this->peek_default(this->gen_02_detectionData, 0, 1);
+        peek_27 = result_76[1];
+        peek_26 = result_76[0];
+        this->poke_default(this->gen_02_detectionData, peek_26 * amp1, 0, 1, 0);
+        number applyFreq1 = 0;
+        auto result_77 = this->peek_default(this->gen_02_detectionData, 0, 0);
+        applyFreq1 = result_77[0];
         number peek_28 = 0;
         number peek_29 = 0;
-        auto result_74 = this->peek_default(this->gen_02_detectionData, 1, 1);
-        peek_29 = result_74[1];
-        peek_28 = result_74[0];
-        this->poke_default(this->gen_02_detectionData, peek_28 * amp2, 1, 1, 0);
-        number applyFreq2 = 0;
-        auto result_75 = this->peek_default(this->gen_02_detectionData, 1, 0);
-        applyFreq2 = result_75[0];
+        auto result_78 = this->peek_default(this->gen_02_detectionData, 0, 1);
+        peek_29 = result_78[1];
+        peek_28 = result_78[0];
+
+        number ampedWave1_80 = rnbo_sin(
+            this->gen_02_phasor_79_next(applyFreq1, 0) * 6.28318530717958647692 - 3.14159265358979323846
+        ) * peek_28;
+
         number peek_30 = 0;
         number peek_31 = 0;
-        auto result_76 = this->peek_default(this->gen_02_detectionData, 1, 1);
-        peek_31 = result_76[1];
-        peek_30 = result_76[0];
-
-        number ampedWave2_78 = rnbo_sin(
-            this->gen_02_phasor_77_next(applyFreq2, 0) * 6.28318530717958647692 - 3.14159265358979323846
-        ) * peek_30;
-
+        auto result_81 = this->peek_default(this->gen_02_detectionData, 1, 0);
+        peek_31 = result_81[1];
+        peek_30 = result_81[0];
+        this->poke_default(this->gen_02_detectionData, peek_30 + modFreqVal2_53 * modAmp, 1, 0, 0);
         number peek_32 = 0;
         number peek_33 = 0;
-        auto result_79 = this->peek_default(this->gen_02_detectionData, 2, 0);
-        peek_33 = result_79[1];
-        peek_32 = result_79[0];
-
-        this->poke_default(
-            this->gen_02_detectionData,
-            peek_32 * freqScale + modFreqVal3_54 * modAmp,
-            2,
-            0,
-            0
-        );
-
+        auto result_82 = this->peek_default(this->gen_02_detectionData, 1, 1);
+        peek_33 = result_82[1];
+        peek_32 = result_82[0];
+        this->poke_default(this->gen_02_detectionData, peek_32 * amp2, 1, 1, 0);
+        number applyFreq2 = 0;
+        auto result_83 = this->peek_default(this->gen_02_detectionData, 1, 0);
+        applyFreq2 = result_83[0];
         number peek_34 = 0;
         number peek_35 = 0;
-        auto result_80 = this->peek_default(this->gen_02_detectionData, 2, 1);
-        peek_35 = result_80[1];
-        peek_34 = result_80[0];
-        this->poke_default(this->gen_02_detectionData, peek_34 * amp3, 2, 1, 0);
-        number applyFreq3 = 0;
-        auto result_81 = this->peek_default(this->gen_02_detectionData, 2, 0);
-        applyFreq3 = result_81[0];
+        auto result_84 = this->peek_default(this->gen_02_detectionData, 1, 1);
+        peek_35 = result_84[1];
+        peek_34 = result_84[0];
+
+        number ampedWave2_86 = rnbo_sin(
+            this->gen_02_phasor_85_next(applyFreq2, 0) * 6.28318530717958647692 - 3.14159265358979323846
+        ) * peek_34;
+
         number peek_36 = 0;
         number peek_37 = 0;
-        auto result_82 = this->peek_default(this->gen_02_detectionData, 2, 1);
-        peek_37 = result_82[1];
-        peek_36 = result_82[0];
-
-        number ampedWave3_84 = rnbo_sin(
-            this->gen_02_phasor_83_next(applyFreq3, 0) * 6.28318530717958647692 - 3.14159265358979323846
-        ) * peek_36;
-
+        auto result_87 = this->peek_default(this->gen_02_detectionData, 2, 0);
+        peek_37 = result_87[1];
+        peek_36 = result_87[0];
+        this->poke_default(this->gen_02_detectionData, peek_36 + modFreqVal3_54 * modAmp, 2, 0, 0);
         number peek_38 = 0;
         number peek_39 = 0;
-        auto result_85 = this->peek_default(this->gen_02_detectionData, 3, 0);
-        peek_39 = result_85[1];
-        peek_38 = result_85[0];
-
-        this->poke_default(
-            this->gen_02_detectionData,
-            peek_38 * freqScale + modFreqVal4_55 * modAmp,
-            3,
-            0,
-            0
-        );
-
+        auto result_88 = this->peek_default(this->gen_02_detectionData, 2, 1);
+        peek_39 = result_88[1];
+        peek_38 = result_88[0];
+        this->poke_default(this->gen_02_detectionData, peek_38 * amp3, 2, 1, 0);
+        number applyFreq3 = 0;
+        auto result_89 = this->peek_default(this->gen_02_detectionData, 2, 0);
+        applyFreq3 = result_89[0];
         number peek_40 = 0;
         number peek_41 = 0;
-        auto result_86 = this->peek_default(this->gen_02_detectionData, 3, 1);
-        peek_41 = result_86[1];
-        peek_40 = result_86[0];
-        this->poke_default(this->gen_02_detectionData, peek_40 * amp4, 3, 1, 0);
-        number applyFreq4 = 0;
-        auto result_87 = this->peek_default(this->gen_02_detectionData, 3, 0);
-        applyFreq4 = result_87[0];
+        auto result_90 = this->peek_default(this->gen_02_detectionData, 2, 1);
+        peek_41 = result_90[1];
+        peek_40 = result_90[0];
+
+        number ampedWave3_92 = rnbo_sin(
+            this->gen_02_phasor_91_next(applyFreq3, 0) * 6.28318530717958647692 - 3.14159265358979323846
+        ) * peek_40;
+
         number peek_42 = 0;
         number peek_43 = 0;
-        auto result_88 = this->peek_default(this->gen_02_detectionData, 3, 1);
-        peek_43 = result_88[1];
-        peek_42 = result_88[0];
-
-        number ampedWave4_90 = rnbo_sin(
-            this->gen_02_phasor_89_next(applyFreq4, 0) * 6.28318530717958647692 - 3.14159265358979323846
-        ) * peek_42;
-
+        auto result_93 = this->peek_default(this->gen_02_detectionData, 3, 0);
+        peek_43 = result_93[1];
+        peek_42 = result_93[0];
+        this->poke_default(this->gen_02_detectionData, peek_42 + modFreqVal4_55 * modAmp, 3, 0, 0);
         number peek_44 = 0;
         number peek_45 = 0;
-        auto result_91 = this->peek_default(this->gen_02_detectionData, 4, 0);
-        peek_45 = result_91[1];
-        peek_44 = result_91[0];
-
-        this->poke_default(
-            this->gen_02_detectionData,
-            peek_44 * freqScale + modFreqVal5_56 * modAmp,
-            4,
-            0,
-            0
-        );
-
+        auto result_94 = this->peek_default(this->gen_02_detectionData, 3, 1);
+        peek_45 = result_94[1];
+        peek_44 = result_94[0];
+        this->poke_default(this->gen_02_detectionData, peek_44 * amp4, 3, 1, 0);
+        number applyFreq4 = 0;
+        auto result_95 = this->peek_default(this->gen_02_detectionData, 3, 0);
+        applyFreq4 = result_95[0];
         number peek_46 = 0;
         number peek_47 = 0;
-        auto result_92 = this->peek_default(this->gen_02_detectionData, 4, 1);
-        peek_47 = result_92[1];
-        peek_46 = result_92[0];
-        this->poke_default(this->gen_02_detectionData, peek_46 * amp5, 4, 1, 0);
-        number applyFreq5 = 0;
-        auto result_93 = this->peek_default(this->gen_02_detectionData, 4, 0);
-        applyFreq5 = result_93[0];
+        auto result_96 = this->peek_default(this->gen_02_detectionData, 3, 1);
+        peek_47 = result_96[1];
+        peek_46 = result_96[0];
+
+        number ampedWave4_98 = rnbo_sin(
+            this->gen_02_phasor_97_next(applyFreq4, 0) * 6.28318530717958647692 - 3.14159265358979323846
+        ) * peek_46;
+
         number peek_48 = 0;
         number peek_49 = 0;
-        auto result_94 = this->peek_default(this->gen_02_detectionData, 4, 1);
-        peek_49 = result_94[1];
-        peek_48 = result_94[0];
-
-        number ampedWave5_96 = rnbo_sin(
-            this->gen_02_phasor_95_next(applyFreq5, 0) * 6.28318530717958647692 - 3.14159265358979323846
-        ) * peek_48;
-
+        auto result_99 = this->peek_default(this->gen_02_detectionData, 4, 0);
+        peek_49 = result_99[1];
+        peek_48 = result_99[0];
+        this->poke_default(this->gen_02_detectionData, peek_48 + modFreqVal5_56 * modAmp, 4, 0, 0);
         number peek_50 = 0;
         number peek_51 = 0;
-        auto result_97 = this->peek_default(this->gen_02_detectionData, 5, 0);
-        peek_51 = result_97[1];
-        peek_50 = result_97[0];
-
-        this->poke_default(
-            this->gen_02_detectionData,
-            peek_50 * freqScale + modFreqVal6_57 * modAmp,
-            5,
-            0,
-            0
-        );
-
+        auto result_100 = this->peek_default(this->gen_02_detectionData, 4, 1);
+        peek_51 = result_100[1];
+        peek_50 = result_100[0];
+        this->poke_default(this->gen_02_detectionData, peek_50 * amp5, 4, 1, 0);
+        number applyFreq5 = 0;
+        auto result_101 = this->peek_default(this->gen_02_detectionData, 4, 0);
+        applyFreq5 = result_101[0];
         number peek_52 = 0;
         number peek_53 = 0;
-        auto result_98 = this->peek_default(this->gen_02_detectionData, 5, 1);
-        peek_53 = result_98[1];
-        peek_52 = result_98[0];
-        this->poke_default(this->gen_02_detectionData, peek_52 * amp6, 5, 1, 0);
-        number applyFreq6 = 0;
-        auto result_99 = this->peek_default(this->gen_02_detectionData, 5, 0);
-        applyFreq6 = result_99[0];
+        auto result_102 = this->peek_default(this->gen_02_detectionData, 4, 1);
+        peek_53 = result_102[1];
+        peek_52 = result_102[0];
+
+        number ampedWave5_104 = rnbo_sin(
+            this->gen_02_phasor_103_next(applyFreq5, 0) * 6.28318530717958647692 - 3.14159265358979323846
+        ) * peek_52;
+
         number peek_54 = 0;
         number peek_55 = 0;
-        auto result_100 = this->peek_default(this->gen_02_detectionData, 5, 1);
-        peek_55 = result_100[1];
-        peek_54 = result_100[0];
-
-        number ampedWave6_102 = rnbo_sin(
-            this->gen_02_phasor_101_next(applyFreq6, 0) * 6.28318530717958647692 - 3.14159265358979323846
-        ) * peek_54;
-
+        auto result_105 = this->peek_default(this->gen_02_detectionData, 5, 0);
+        peek_55 = result_105[1];
+        peek_54 = result_105[0];
+        this->poke_default(this->gen_02_detectionData, peek_54 + modFreqVal6_57 * modAmp, 5, 0, 0);
         number peek_56 = 0;
         number peek_57 = 0;
-        auto result_103 = this->peek_default(this->gen_02_detectionData, 6, 0);
-        peek_57 = result_103[1];
-        peek_56 = result_103[0];
-
-        this->poke_default(
-            this->gen_02_detectionData,
-            peek_56 * freqScale + modFreqVal7_58 * modAmp,
-            6,
-            0,
-            0
-        );
-
+        auto result_106 = this->peek_default(this->gen_02_detectionData, 5, 1);
+        peek_57 = result_106[1];
+        peek_56 = result_106[0];
+        this->poke_default(this->gen_02_detectionData, peek_56 * amp6, 5, 1, 0);
+        number applyFreq6 = 0;
+        auto result_107 = this->peek_default(this->gen_02_detectionData, 5, 0);
+        applyFreq6 = result_107[0];
         number peek_58 = 0;
         number peek_59 = 0;
-        auto result_104 = this->peek_default(this->gen_02_detectionData, 6, 1);
-        peek_59 = result_104[1];
-        peek_58 = result_104[0];
-        this->poke_default(this->gen_02_detectionData, peek_58 * amp7, 6, 1, 0);
-        number applyFreq7 = 0;
-        auto result_105 = this->peek_default(this->gen_02_detectionData, 6, 0);
-        applyFreq7 = result_105[0];
+        auto result_108 = this->peek_default(this->gen_02_detectionData, 5, 1);
+        peek_59 = result_108[1];
+        peek_58 = result_108[0];
+
+        number ampedWave6_110 = rnbo_sin(
+            this->gen_02_phasor_109_next(applyFreq6, 0) * 6.28318530717958647692 - 3.14159265358979323846
+        ) * peek_58;
+
         number peek_60 = 0;
         number peek_61 = 0;
-        auto result_106 = this->peek_default(this->gen_02_detectionData, 6, 1);
-        peek_61 = result_106[1];
-        peek_60 = result_106[0];
-
-        number ampedWave7_108 = rnbo_sin(
-            this->gen_02_phasor_107_next(applyFreq7, 0) * 6.28318530717958647692 - 3.14159265358979323846
-        ) * peek_60;
-
+        auto result_111 = this->peek_default(this->gen_02_detectionData, 6, 0);
+        peek_61 = result_111[1];
+        peek_60 = result_111[0];
+        this->poke_default(this->gen_02_detectionData, peek_60 + modFreqVal7_58 * modAmp, 6, 0, 0);
         number peek_62 = 0;
         number peek_63 = 0;
-        auto result_109 = this->peek_default(this->gen_02_detectionData, 7, 0);
-        peek_63 = result_109[1];
-        peek_62 = result_109[0];
-
-        this->poke_default(
-            this->gen_02_detectionData,
-            peek_62 * freqScale + modFreqVal8_59 * modAmp,
-            7,
-            0,
-            0
-        );
-
+        auto result_112 = this->peek_default(this->gen_02_detectionData, 6, 1);
+        peek_63 = result_112[1];
+        peek_62 = result_112[0];
+        this->poke_default(this->gen_02_detectionData, peek_62 * amp7, 6, 1, 0);
+        number applyFreq7 = 0;
+        auto result_113 = this->peek_default(this->gen_02_detectionData, 6, 0);
+        applyFreq7 = result_113[0];
         number peek_64 = 0;
         number peek_65 = 0;
-        auto result_110 = this->peek_default(this->gen_02_detectionData, 7, 1);
-        peek_65 = result_110[1];
-        peek_64 = result_110[0];
-        this->poke_default(this->gen_02_detectionData, peek_64 * amp8, 7, 1, 0);
-        number applyFreq8 = 0;
-        auto result_111 = this->peek_default(this->gen_02_detectionData, 7, 0);
-        applyFreq8 = result_111[0];
+        auto result_114 = this->peek_default(this->gen_02_detectionData, 6, 1);
+        peek_65 = result_114[1];
+        peek_64 = result_114[0];
+
+        number ampedWave7_116 = rnbo_sin(
+            this->gen_02_phasor_115_next(applyFreq7, 0) * 6.28318530717958647692 - 3.14159265358979323846
+        ) * peek_64;
+
         number peek_66 = 0;
         number peek_67 = 0;
-        auto result_112 = this->peek_default(this->gen_02_detectionData, 7, 1);
-        peek_67 = result_112[1];
-        peek_66 = result_112[0];
-
-        number ampedWave8_114 = rnbo_sin(
-            this->gen_02_phasor_113_next(applyFreq8, 0) * 6.28318530717958647692 - 3.14159265358979323846
-        ) * peek_66;
-
+        auto result_117 = this->peek_default(this->gen_02_detectionData, 7, 0);
+        peek_67 = result_117[1];
+        peek_66 = result_117[0];
+        this->poke_default(this->gen_02_detectionData, peek_66 + modFreqVal8_59 * modAmp, 7, 0, 0);
         number peek_68 = 0;
         number peek_69 = 0;
-        auto result_115 = this->peek_default(this->gen_02_detectionData, 8, 0);
-        peek_69 = result_115[1];
-        peek_68 = result_115[0];
-
-        this->poke_default(
-            this->gen_02_detectionData,
-            peek_68 * freqScale + modFreqVal9_60 * modAmp,
-            8,
-            0,
-            0
-        );
-
+        auto result_118 = this->peek_default(this->gen_02_detectionData, 7, 1);
+        peek_69 = result_118[1];
+        peek_68 = result_118[0];
+        this->poke_default(this->gen_02_detectionData, peek_68 * amp8, 7, 1, 0);
+        number applyFreq8 = 0;
+        auto result_119 = this->peek_default(this->gen_02_detectionData, 7, 0);
+        applyFreq8 = result_119[0];
         number peek_70 = 0;
         number peek_71 = 0;
-        auto result_116 = this->peek_default(this->gen_02_detectionData, 8, 1);
-        peek_71 = result_116[1];
-        peek_70 = result_116[0];
-        this->poke_default(this->gen_02_detectionData, peek_70 * amp9, 8, 1, 0);
-        number applyFreq9 = 0;
-        auto result_117 = this->peek_default(this->gen_02_detectionData, 8, 0);
-        applyFreq9 = result_117[0];
+        auto result_120 = this->peek_default(this->gen_02_detectionData, 7, 1);
+        peek_71 = result_120[1];
+        peek_70 = result_120[0];
+
+        number ampedWave8_122 = rnbo_sin(
+            this->gen_02_phasor_121_next(applyFreq8, 0) * 6.28318530717958647692 - 3.14159265358979323846
+        ) * peek_70;
+
         number peek_72 = 0;
         number peek_73 = 0;
-        auto result_118 = this->peek_default(this->gen_02_detectionData, 8, 1);
-        peek_73 = result_118[1];
-        peek_72 = result_118[0];
-
-        number ampedWave9_120 = rnbo_sin(
-            this->gen_02_phasor_119_next(applyFreq9, 0) * 6.28318530717958647692 - 3.14159265358979323846
-        ) * peek_72;
-
+        auto result_123 = this->peek_default(this->gen_02_detectionData, 8, 0);
+        peek_73 = result_123[1];
+        peek_72 = result_123[0];
+        this->poke_default(this->gen_02_detectionData, peek_72 + modFreqVal9_60 * modAmp, 8, 0, 0);
         number peek_74 = 0;
         number peek_75 = 0;
-        auto result_121 = this->peek_default(this->gen_02_detectionData, 9, 0);
-        peek_75 = result_121[1];
-        peek_74 = result_121[0];
-
-        this->poke_default(
-            this->gen_02_detectionData,
-            peek_74 * freqScale + modFreqVal10_61 * modAmp,
-            9,
-            0,
-            0
-        );
-
+        auto result_124 = this->peek_default(this->gen_02_detectionData, 8, 1);
+        peek_75 = result_124[1];
+        peek_74 = result_124[0];
+        this->poke_default(this->gen_02_detectionData, peek_74 * amp9, 8, 1, 0);
+        number applyFreq9 = 0;
+        auto result_125 = this->peek_default(this->gen_02_detectionData, 8, 0);
+        applyFreq9 = result_125[0];
         number peek_76 = 0;
         number peek_77 = 0;
-        auto result_122 = this->peek_default(this->gen_02_detectionData, 9, 1);
-        peek_77 = result_122[1];
-        peek_76 = result_122[0];
-        this->poke_default(this->gen_02_detectionData, peek_76 * amp10, 9, 1, 0);
-        number applyFreq10 = 0;
-        auto result_123 = this->peek_default(this->gen_02_detectionData, 9, 0);
-        applyFreq10 = result_123[0];
+        auto result_126 = this->peek_default(this->gen_02_detectionData, 8, 1);
+        peek_77 = result_126[1];
+        peek_76 = result_126[0];
+
+        number ampedWave9_128 = rnbo_sin(
+            this->gen_02_phasor_127_next(applyFreq9, 0) * 6.28318530717958647692 - 3.14159265358979323846
+        ) * peek_76;
+
         number peek_78 = 0;
         number peek_79 = 0;
-        auto result_124 = this->peek_default(this->gen_02_detectionData, 9, 1);
-        peek_79 = result_124[1];
-        peek_78 = result_124[0];
-
-        number ampedWave10_126 = rnbo_sin(
-            this->gen_02_phasor_125_next(applyFreq10, 0) * 6.28318530717958647692 - 3.14159265358979323846
-        ) * peek_78;
-
+        auto result_129 = this->peek_default(this->gen_02_detectionData, 9, 0);
+        peek_79 = result_129[1];
+        peek_78 = result_129[0];
+        this->poke_default(this->gen_02_detectionData, peek_78 + modFreqVal10_61 * modAmp, 9, 0, 0);
         number peek_80 = 0;
         number peek_81 = 0;
-        auto result_127 = this->peek_default(this->gen_02_detectionData, 10, 0);
-        peek_81 = result_127[1];
-        peek_80 = result_127[0];
-
-        this->poke_default(
-            this->gen_02_detectionData,
-            peek_80 * freqScale + modFreqVal11_62 * modAmp,
-            10,
-            0,
-            0
-        );
-
+        auto result_130 = this->peek_default(this->gen_02_detectionData, 9, 1);
+        peek_81 = result_130[1];
+        peek_80 = result_130[0];
+        this->poke_default(this->gen_02_detectionData, peek_80 * amp10, 9, 1, 0);
+        number applyFreq10 = 0;
+        auto result_131 = this->peek_default(this->gen_02_detectionData, 9, 0);
+        applyFreq10 = result_131[0];
         number peek_82 = 0;
         number peek_83 = 0;
-        auto result_128 = this->peek_default(this->gen_02_detectionData, 10, 1);
-        peek_83 = result_128[1];
-        peek_82 = result_128[0];
-        this->poke_default(this->gen_02_detectionData, peek_82 * amp11, 10, 1, 0);
-        number applyFreq11 = 0;
-        auto result_129 = this->peek_default(this->gen_02_detectionData, 10, 0);
-        applyFreq11 = result_129[0];
+        auto result_132 = this->peek_default(this->gen_02_detectionData, 9, 1);
+        peek_83 = result_132[1];
+        peek_82 = result_132[0];
+
+        number ampedWave10_134 = rnbo_sin(
+            this->gen_02_phasor_133_next(applyFreq10, 0) * 6.28318530717958647692 - 3.14159265358979323846
+        ) * peek_82;
+
         number peek_84 = 0;
         number peek_85 = 0;
-        auto result_130 = this->peek_default(this->gen_02_detectionData, 10, 1);
-        peek_85 = result_130[1];
-        peek_84 = result_130[0];
-
-        number ampedWave11_132 = rnbo_sin(
-            this->gen_02_phasor_131_next(applyFreq11, 0) * 6.28318530717958647692 - 3.14159265358979323846
-        ) * peek_84;
-
+        auto result_135 = this->peek_default(this->gen_02_detectionData, 10, 0);
+        peek_85 = result_135[1];
+        peek_84 = result_135[0];
+        this->poke_default(this->gen_02_detectionData, peek_84 + modFreqVal11_62 * modAmp, 10, 0, 0);
         number peek_86 = 0;
         number peek_87 = 0;
-        auto result_133 = this->peek_default(this->gen_02_detectionData, 11, 0);
-        peek_87 = result_133[1];
-        peek_86 = result_133[0];
-
-        this->poke_default(
-            this->gen_02_detectionData,
-            peek_86 * freqScale + modFreqVal12_63 * modAmp,
-            11,
-            0,
-            0
-        );
-
+        auto result_136 = this->peek_default(this->gen_02_detectionData, 10, 1);
+        peek_87 = result_136[1];
+        peek_86 = result_136[0];
+        this->poke_default(this->gen_02_detectionData, peek_86 * amp11, 10, 1, 0);
+        number applyFreq11 = 0;
+        auto result_137 = this->peek_default(this->gen_02_detectionData, 10, 0);
+        applyFreq11 = result_137[0];
         number peek_88 = 0;
         number peek_89 = 0;
-        auto result_134 = this->peek_default(this->gen_02_detectionData, 11, 1);
-        peek_89 = result_134[1];
-        peek_88 = result_134[0];
-        this->poke_default(this->gen_02_detectionData, peek_88 * amp12, 11, 1, 0);
-        number applyFreq12 = 0;
-        auto result_135 = this->peek_default(this->gen_02_detectionData, 11, 0);
-        applyFreq12 = result_135[0];
+        auto result_138 = this->peek_default(this->gen_02_detectionData, 10, 1);
+        peek_89 = result_138[1];
+        peek_88 = result_138[0];
+
+        number ampedWave11_140 = rnbo_sin(
+            this->gen_02_phasor_139_next(applyFreq11, 0) * 6.28318530717958647692 - 3.14159265358979323846
+        ) * peek_88;
+
         number peek_90 = 0;
         number peek_91 = 0;
-        auto result_136 = this->peek_default(this->gen_02_detectionData, 11, 1);
-        peek_91 = result_136[1];
-        peek_90 = result_136[0];
-
-        number ampedWave12_138 = rnbo_sin(
-            this->gen_02_phasor_137_next(applyFreq12, 0) * 6.28318530717958647692 - 3.14159265358979323846
-        ) * peek_90;
-
+        auto result_141 = this->peek_default(this->gen_02_detectionData, 11, 0);
+        peek_91 = result_141[1];
+        peek_90 = result_141[0];
+        this->poke_default(this->gen_02_detectionData, peek_90 + modFreqVal12_63 * modAmp, 11, 0, 0);
         number peek_92 = 0;
         number peek_93 = 0;
-        auto result_139 = this->peek_default(this->gen_02_detectionData, 12, 0);
-        peek_93 = result_139[1];
-        peek_92 = result_139[0];
-
-        this->poke_default(
-            this->gen_02_detectionData,
-            peek_92 * freqScale + modFreqVal13_64 * modAmp,
-            12,
-            0,
-            0
-        );
-
+        auto result_142 = this->peek_default(this->gen_02_detectionData, 11, 1);
+        peek_93 = result_142[1];
+        peek_92 = result_142[0];
+        this->poke_default(this->gen_02_detectionData, peek_92 * amp12, 11, 1, 0);
+        number applyFreq12 = 0;
+        auto result_143 = this->peek_default(this->gen_02_detectionData, 11, 0);
+        applyFreq12 = result_143[0];
         number peek_94 = 0;
         number peek_95 = 0;
-        auto result_140 = this->peek_default(this->gen_02_detectionData, 12, 1);
-        peek_95 = result_140[1];
-        peek_94 = result_140[0];
-        this->poke_default(this->gen_02_detectionData, peek_94 * amp13, 12, 1, 0);
-        number applyFreq13 = 0;
-        auto result_141 = this->peek_default(this->gen_02_detectionData, 12, 0);
-        applyFreq13 = result_141[0];
+        auto result_144 = this->peek_default(this->gen_02_detectionData, 11, 1);
+        peek_95 = result_144[1];
+        peek_94 = result_144[0];
+
+        number ampedWave12_146 = rnbo_sin(
+            this->gen_02_phasor_145_next(applyFreq12, 0) * 6.28318530717958647692 - 3.14159265358979323846
+        ) * peek_94;
+
         number peek_96 = 0;
         number peek_97 = 0;
-        auto result_142 = this->peek_default(this->gen_02_detectionData, 12, 1);
-        peek_97 = result_142[1];
-        peek_96 = result_142[0];
-
-        number ampedWave13_144 = rnbo_sin(
-            this->gen_02_phasor_143_next(applyFreq13, 0) * 6.28318530717958647692 - 3.14159265358979323846
-        ) * peek_96;
-
+        auto result_147 = this->peek_default(this->gen_02_detectionData, 12, 0);
+        peek_97 = result_147[1];
+        peek_96 = result_147[0];
+        this->poke_default(this->gen_02_detectionData, peek_96 + modFreqVal13_64 * modAmp, 12, 0, 0);
         number peek_98 = 0;
         number peek_99 = 0;
-        auto result_145 = this->peek_default(this->gen_02_detectionData, 13, 0);
-        peek_99 = result_145[1];
-        peek_98 = result_145[0];
-
-        this->poke_default(
-            this->gen_02_detectionData,
-            peek_98 * freqScale + modFreqVal14_65 * modAmp,
-            13,
-            0,
-            0
-        );
-
+        auto result_148 = this->peek_default(this->gen_02_detectionData, 12, 1);
+        peek_99 = result_148[1];
+        peek_98 = result_148[0];
+        this->poke_default(this->gen_02_detectionData, peek_98 * amp13, 12, 1, 0);
+        number applyFreq13 = 0;
+        auto result_149 = this->peek_default(this->gen_02_detectionData, 12, 0);
+        applyFreq13 = result_149[0];
         number peek_100 = 0;
         number peek_101 = 0;
-        auto result_146 = this->peek_default(this->gen_02_detectionData, 13, 1);
-        peek_101 = result_146[1];
-        peek_100 = result_146[0];
-        this->poke_default(this->gen_02_detectionData, peek_100 * amp14, 13, 1, 0);
-        number applyFreq14 = 0;
-        auto result_147 = this->peek_default(this->gen_02_detectionData, 13, 0);
-        applyFreq14 = result_147[0];
+        auto result_150 = this->peek_default(this->gen_02_detectionData, 12, 1);
+        peek_101 = result_150[1];
+        peek_100 = result_150[0];
+
+        number ampedWave13_152 = rnbo_sin(
+            this->gen_02_phasor_151_next(applyFreq13, 0) * 6.28318530717958647692 - 3.14159265358979323846
+        ) * peek_100;
+
         number peek_102 = 0;
         number peek_103 = 0;
-        auto result_148 = this->peek_default(this->gen_02_detectionData, 13, 1);
-        peek_103 = result_148[1];
-        peek_102 = result_148[0];
-
-        number ampedWave14_150 = rnbo_sin(
-            this->gen_02_phasor_149_next(applyFreq14, 0) * 6.28318530717958647692 - 3.14159265358979323846
-        ) * peek_102;
-
+        auto result_153 = this->peek_default(this->gen_02_detectionData, 13, 0);
+        peek_103 = result_153[1];
+        peek_102 = result_153[0];
+        this->poke_default(this->gen_02_detectionData, peek_102 + modFreqVal14_65 * modAmp, 13, 0, 0);
         number peek_104 = 0;
         number peek_105 = 0;
-        auto result_151 = this->peek_default(this->gen_02_detectionData, 14, 0);
-        peek_105 = result_151[1];
-        peek_104 = result_151[0];
-
-        this->poke_default(
-            this->gen_02_detectionData,
-            peek_104 * freqScale + modFreqVal15_66 * modAmp,
-            14,
-            0,
-            0
-        );
-
+        auto result_154 = this->peek_default(this->gen_02_detectionData, 13, 1);
+        peek_105 = result_154[1];
+        peek_104 = result_154[0];
+        this->poke_default(this->gen_02_detectionData, peek_104 * amp14, 13, 1, 0);
+        number applyFreq14 = 0;
+        auto result_155 = this->peek_default(this->gen_02_detectionData, 13, 0);
+        applyFreq14 = result_155[0];
         number peek_106 = 0;
         number peek_107 = 0;
-        auto result_152 = this->peek_default(this->gen_02_detectionData, 14, 1);
-        peek_107 = result_152[1];
-        peek_106 = result_152[0];
-        this->poke_default(this->gen_02_detectionData, peek_106 * amp15, 14, 1, 0);
-        number applyFreq15 = 0;
-        auto result_153 = this->peek_default(this->gen_02_detectionData, 14, 0);
-        applyFreq15 = result_153[0];
+        auto result_156 = this->peek_default(this->gen_02_detectionData, 13, 1);
+        peek_107 = result_156[1];
+        peek_106 = result_156[0];
+
+        number ampedWave14_158 = rnbo_sin(
+            this->gen_02_phasor_157_next(applyFreq14, 0) * 6.28318530717958647692 - 3.14159265358979323846
+        ) * peek_106;
+
         number peek_108 = 0;
         number peek_109 = 0;
-        auto result_154 = this->peek_default(this->gen_02_detectionData, 14, 1);
-        peek_109 = result_154[1];
-        peek_108 = result_154[0];
+        auto result_159 = this->peek_default(this->gen_02_detectionData, 14, 0);
+        peek_109 = result_159[1];
+        peek_108 = result_159[0];
+        this->poke_default(this->gen_02_detectionData, peek_108 + modFreqVal15_66 * modAmp, 14, 0, 0);
+        number peek_110 = 0;
+        number peek_111 = 0;
+        auto result_160 = this->peek_default(this->gen_02_detectionData, 14, 1);
+        peek_111 = result_160[1];
+        peek_110 = result_160[0];
+        this->poke_default(this->gen_02_detectionData, peek_110 * amp15, 14, 1, 0);
+        number applyFreq15 = 0;
+        auto result_161 = this->peek_default(this->gen_02_detectionData, 14, 0);
+        applyFreq15 = result_161[0];
+        number peek_112 = 0;
+        number peek_113 = 0;
+        auto result_162 = this->peek_default(this->gen_02_detectionData, 14, 1);
+        peek_113 = result_162[1];
+        peek_112 = result_162[0];
 
-        number ampedWave15_156 = rnbo_sin(
-            this->gen_02_phasor_155_next(applyFreq15, 0) * 6.28318530717958647692 - 3.14159265358979323846
-        ) * peek_108;
+        number ampedWave15_164 = rnbo_sin(
+            this->gen_02_phasor_163_next(applyFreq15, 0) * 6.28318530717958647692 - 3.14159265358979323846
+        ) * peek_112;
 
-        number cycle_110 = 0;
-        number cycle_111 = 0;
-        array<number, 2> result_158 = this->gen_02_cycle_157_next(modPanFreq, 0);
-        cycle_111 = result_158[1];
-        cycle_110 = result_158[0];
-        this->gen_02_modPanDel_write(cycle_110);
+        number cycle_114 = 0;
+        number cycle_115 = 0;
+        array<number, 2> result_166 = this->gen_02_cycle_165_next(modPanFreq, 0);
+        cycle_115 = result_166[1];
+        cycle_114 = result_166[0];
+        this->gen_02_modPanDel_write(cycle_114);
 
-        number modPanVal1_159 = this->gen_02_modPanDel_read(
+        number modPanVal1_167 = this->gen_02_modPanDel_read(
             ((modPanFreq == 0. ? 0. : this->samplerate() / modPanFreq)) * 0.066666666666667,
             0
         );
 
-        number stereoL1_160 = ampedWave1_72 * ((modPanVal1_159 + 1) / (number)2);
-        number stereoR1_161 = ampedWave1_72 * ((-modPanVal1_159 + 1) / (number)2);
+        number stereoL1_168 = ampedWave1_80 * ((modPanVal1_167 + 1) / (number)2);
+        number stereoR1_169 = ampedWave1_80 * ((-modPanVal1_167 + 1) / (number)2);
 
-        number modPanVal2_162 = this->gen_02_modPanDel_read(
+        number modPanVal2_170 = this->gen_02_modPanDel_read(
             ((modPanFreq == 0. ? 0. : this->samplerate() / modPanFreq)) * 0.13333333333333,
             0
         );
 
-        number stereoL2_163 = ampedWave2_78 * ((modPanVal2_162 + 1) / (number)2);
-        number stereoR2_164 = ampedWave2_78 * ((-modPanVal2_162 + 1) / (number)2);
-        number modPanVal3_165 = this->gen_02_modPanDel_read(((modPanFreq == 0. ? 0. : this->samplerate() / modPanFreq)) * 0.2, 0);
-        number stereoL3_166 = ampedWave3_84 * ((modPanVal3_165 + 1) / (number)2);
-        number stereoR3_167 = ampedWave3_84 * ((-modPanVal3_165 + 1) / (number)2);
+        number stereoL2_171 = ampedWave2_86 * ((modPanVal2_170 + 1) / (number)2);
+        number stereoR2_172 = ampedWave2_86 * ((-modPanVal2_170 + 1) / (number)2);
+        number modPanVal3_173 = this->gen_02_modPanDel_read(((modPanFreq == 0. ? 0. : this->samplerate() / modPanFreq)) * 0.2, 0);
+        number stereoL3_174 = ampedWave3_92 * ((modPanVal3_173 + 1) / (number)2);
+        number stereoR3_175 = ampedWave3_92 * ((-modPanVal3_173 + 1) / (number)2);
 
-        number modPanVal4_168 = this->gen_02_modPanDel_read(
+        number modPanVal4_176 = this->gen_02_modPanDel_read(
             ((modPanFreq == 0. ? 0. : this->samplerate() / modPanFreq)) * 0.26666666666667,
             0
         );
 
-        number stereoL4_169 = ampedWave4_90 * ((modPanVal4_168 + 1) / (number)2);
-        number stereoR4_170 = ampedWave4_90 * ((-modPanVal4_168 + 1) / (number)2);
+        number stereoL4_177 = ampedWave4_98 * ((modPanVal4_176 + 1) / (number)2);
+        number stereoR4_178 = ampedWave4_98 * ((-modPanVal4_176 + 1) / (number)2);
 
-        number modPanVal5_171 = this->gen_02_modPanDel_read(
+        number modPanVal5_179 = this->gen_02_modPanDel_read(
             ((modPanFreq == 0. ? 0. : this->samplerate() / modPanFreq)) * 0.33333333333333,
             0
         );
 
-        number stereoL5_172 = ampedWave5_96 * ((modPanVal5_171 + 1) / (number)2);
-        number stereoR5_173 = ampedWave5_96 * ((-modPanVal5_171 + 1) / (number)2);
-        number modPanVal6_174 = this->gen_02_modPanDel_read(((modPanFreq == 0. ? 0. : this->samplerate() / modPanFreq)) * 0.4, 0);
-        number stereoL6_175 = ampedWave6_102 * ((modPanVal6_174 + 1) / (number)2);
-        number stereoR6_176 = ampedWave6_102 * ((-modPanVal6_174 + 1) / (number)2);
+        number stereoL5_180 = ampedWave5_104 * ((modPanVal5_179 + 1) / (number)2);
+        number stereoR5_181 = ampedWave5_104 * ((-modPanVal5_179 + 1) / (number)2);
+        number modPanVal6_182 = this->gen_02_modPanDel_read(((modPanFreq == 0. ? 0. : this->samplerate() / modPanFreq)) * 0.4, 0);
+        number stereoL6_183 = ampedWave6_110 * ((modPanVal6_182 + 1) / (number)2);
+        number stereoR6_184 = ampedWave6_110 * ((-modPanVal6_182 + 1) / (number)2);
 
-        number modPanVal7_177 = this->gen_02_modPanDel_read(
+        number modPanVal7_185 = this->gen_02_modPanDel_read(
             ((modPanFreq == 0. ? 0. : this->samplerate() / modPanFreq)) * 0.46666666666667,
             0
         );
 
-        number stereoL7_178 = ampedWave7_108 * ((modPanVal7_177 + 1) / (number)2);
-        number stereoR7_179 = ampedWave7_108 * ((-modPanVal7_177 + 1) / (number)2);
+        number stereoL7_186 = ampedWave7_116 * ((modPanVal7_185 + 1) / (number)2);
+        number stereoR7_187 = ampedWave7_116 * ((-modPanVal7_185 + 1) / (number)2);
 
-        number modPanVal8_180 = this->gen_02_modPanDel_read(
+        number modPanVal8_188 = this->gen_02_modPanDel_read(
             ((modPanFreq == 0. ? 0. : this->samplerate() / modPanFreq)) * 0.53333333333333,
             0
         );
 
-        number stereoL8_181 = ampedWave8_114 * ((modPanVal8_180 + 1) / (number)2);
-        number stereoR8_182 = ampedWave8_114 * ((-modPanVal8_180 + 1) / (number)2);
-        number modPanVal9_183 = this->gen_02_modPanDel_read(((modPanFreq == 0. ? 0. : this->samplerate() / modPanFreq)) * 0.6, 0);
-        number stereoL9_184 = ampedWave9_120 * ((modPanVal9_183 + 1) / (number)2);
-        number stereoR9_185 = ampedWave9_120 * ((-modPanVal9_183 + 1) / (number)2);
+        number stereoL8_189 = ampedWave8_122 * ((modPanVal8_188 + 1) / (number)2);
+        number stereoR8_190 = ampedWave8_122 * ((-modPanVal8_188 + 1) / (number)2);
+        number modPanVal9_191 = this->gen_02_modPanDel_read(((modPanFreq == 0. ? 0. : this->samplerate() / modPanFreq)) * 0.6, 0);
+        number stereoL9_192 = ampedWave9_128 * ((modPanVal9_191 + 1) / (number)2);
+        number stereoR9_193 = ampedWave9_128 * ((-modPanVal9_191 + 1) / (number)2);
 
-        number modPanVal10_186 = this->gen_02_modPanDel_read(
+        number modPanVal10_194 = this->gen_02_modPanDel_read(
             ((modPanFreq == 0. ? 0. : this->samplerate() / modPanFreq)) * 0.66666666666667,
             0
         );
 
-        number stereoL10_187 = ampedWave10_126 * ((modPanVal10_186 + 1) / (number)2);
-        number stereoR10_188 = ampedWave10_126 * ((-modPanVal10_186 + 1) / (number)2);
+        number stereoL10_195 = ampedWave10_134 * ((modPanVal10_194 + 1) / (number)2);
+        number stereoR10_196 = ampedWave10_134 * ((-modPanVal10_194 + 1) / (number)2);
 
-        number modPanVal11_189 = this->gen_02_modPanDel_read(
+        number modPanVal11_197 = this->gen_02_modPanDel_read(
             ((modPanFreq == 0. ? 0. : this->samplerate() / modPanFreq)) * 0.73333333333333,
             0
         );
 
-        number stereoL11_190 = ampedWave11_132 * ((modPanVal11_189 + 1) / (number)2);
-        number stereoR11_191 = ampedWave11_132 * ((-modPanVal11_189 + 1) / (number)2);
-        number modPanVal12_192 = this->gen_02_modPanDel_read(((modPanFreq == 0. ? 0. : this->samplerate() / modPanFreq)) * 0.8, 0);
-        number stereoL12_193 = ampedWave12_138 * ((modPanVal12_192 + 1) / (number)2);
-        number stereoR12_194 = ampedWave12_138 * ((-modPanVal12_192 + 1) / (number)2);
+        number stereoL11_198 = ampedWave11_140 * ((modPanVal11_197 + 1) / (number)2);
+        number stereoR11_199 = ampedWave11_140 * ((-modPanVal11_197 + 1) / (number)2);
+        number modPanVal12_200 = this->gen_02_modPanDel_read(((modPanFreq == 0. ? 0. : this->samplerate() / modPanFreq)) * 0.8, 0);
+        number stereoL12_201 = ampedWave12_146 * ((modPanVal12_200 + 1) / (number)2);
+        number stereoR12_202 = ampedWave12_146 * ((-modPanVal12_200 + 1) / (number)2);
 
-        number modPanVal13_195 = this->gen_02_modPanDel_read(
+        number modPanVal13_203 = this->gen_02_modPanDel_read(
             ((modPanFreq == 0. ? 0. : this->samplerate() / modPanFreq)) * 0.86666666666667,
             0
         );
 
-        number stereoL13_196 = ampedWave13_144 * ((modPanVal13_195 + 1) / (number)2);
-        number stereoR13_197 = ampedWave13_144 * ((-modPanVal13_195 + 1) / (number)2);
+        number stereoL13_204 = ampedWave13_152 * ((modPanVal13_203 + 1) / (number)2);
+        number stereoR13_205 = ampedWave13_152 * ((-modPanVal13_203 + 1) / (number)2);
 
-        number modPanVal14_198 = this->gen_02_modPanDel_read(
+        number modPanVal14_206 = this->gen_02_modPanDel_read(
             ((modPanFreq == 0. ? 0. : this->samplerate() / modPanFreq)) * 0.93333333333333,
             0
         );
 
-        number stereoL14_199 = ampedWave14_150 * ((modPanVal14_198 + 1) / (number)2);
-        number stereoR14_200 = ampedWave14_150 * ((-modPanVal14_198 + 1) / (number)2);
-        number modPanVal15_201 = this->gen_02_modPanDel_read(((modPanFreq == 0. ? 0. : this->samplerate() / modPanFreq)) * 1, 0);
-        number stereoL15_202 = ampedWave15_156 * ((modPanVal15_201 + 1) / (number)2);
-        number stereoR15_203 = ampedWave15_156 * ((-modPanVal15_201 + 1) / (number)2);
-        number synthesizedWaveL_204 = 0;
-        number synthesizedWaveR_205 = 0;
+        number stereoL14_207 = ampedWave14_158 * ((modPanVal14_206 + 1) / (number)2);
+        number stereoR14_208 = ampedWave14_158 * ((-modPanVal14_206 + 1) / (number)2);
+        number modPanVal15_209 = this->gen_02_modPanDel_read(((modPanFreq == 0. ? 0. : this->samplerate() / modPanFreq)) * 1, 0);
+        number stereoL15_210 = ampedWave15_164 * ((modPanVal15_209 + 1) / (number)2);
+        number stereoR15_211 = ampedWave15_164 * ((-modPanVal15_209 + 1) / (number)2);
+        number synthesizedWaveL_212 = 0;
+        number synthesizedWaveR_213 = 0;
 
         if (stereoMode == 0) {
-            synthesizedWaveL_204 = ampedWave1_72 + ampedWave3_84 + ampedWave5_96 + ampedWave7_108 + ampedWave9_120 + ampedWave11_132 + ampedWave13_144 + ampedWave15_156;
-            synthesizedWaveR_205 = ampedWave2_78 + ampedWave4_90 + ampedWave6_102 + ampedWave8_114 + ampedWave10_126 + ampedWave12_138 + ampedWave14_150;
+            synthesizedWaveL_212 = ampedWave1_80 + ampedWave3_92 + ampedWave5_104 + ampedWave7_116 + ampedWave9_128 + ampedWave11_140 + ampedWave13_152 + ampedWave15_164;
+            synthesizedWaveR_213 = ampedWave2_86 + ampedWave4_98 + ampedWave6_110 + ampedWave8_122 + ampedWave10_134 + ampedWave12_146 + ampedWave14_158;
         } else {
-            synthesizedWaveL_204 = stereoL1_160 + stereoL2_163 + stereoL3_166 + stereoL4_169 + stereoL5_172 + stereoL6_175 + stereoL7_178 + stereoL8_181 + stereoL9_184 + stereoL10_187 + stereoL11_190 + stereoL12_193 + stereoL13_196 + stereoL14_199 + stereoL15_202;
-            synthesizedWaveR_205 = stereoR1_161 + stereoR2_164 + stereoR3_167 + stereoR4_170 + stereoR5_173 + stereoR6_176 + stereoR7_179 + stereoR8_182 + stereoR9_185 + stereoR10_188 + stereoR11_191 + stereoR12_194 + stereoR13_197 + stereoR14_200 + stereoR15_203;
+            synthesizedWaveL_212 = stereoL1_168 + stereoL2_171 + stereoL3_174 + stereoL4_177 + stereoL5_180 + stereoL6_183 + stereoL7_186 + stereoL8_189 + stereoL9_192 + stereoL10_195 + stereoL11_198 + stereoL12_201 + stereoL13_204 + stereoL14_207 + stereoL15_210;
+            synthesizedWaveR_213 = stereoR1_169 + stereoR2_172 + stereoR3_175 + stereoR4_178 + stereoR5_181 + stereoR6_184 + stereoR7_187 + stereoR8_190 + stereoR9_193 + stereoR10_196 + stereoR11_199 + stereoR12_202 + stereoR13_205 + stereoR14_208 + stereoR15_211;
         }
 
-        number expr_112_206 = (synthesizedWaveL_204 * 1.5 > 1 ? 1 : (synthesizedWaveL_204 * 1.5 < -1 ? -1 : synthesizedWaveL_204 * 1.5));
-        number expr_113_207 = (synthesizedWaveR_205 * 1.5 > 1 ? 1 : (synthesizedWaveR_205 * 1.5 < -1 ? -1 : synthesizedWaveR_205 * 1.5));
-        out2[(Index)i0] = expr_113_207;
-        out1[(Index)i0] = expr_112_206;
+        number expr_116_214 = (synthesizedWaveL_212 * 1.5 > 1 ? 1 : (synthesizedWaveL_212 * 1.5 < -1 ? -1 : synthesizedWaveL_212 * 1.5));
+        number expr_117_215 = (synthesizedWaveR_213 * 1.5 > 1 ? 1 : (synthesizedWaveR_213 * 1.5 < -1 ? -1 : synthesizedWaveR_213 * 1.5));
+        out2[(Index)i0] = expr_117_215;
+        out1[(Index)i0] = expr_116_214;
         this->gen_02_modPanDel_step();
         this->gen_02_modFreqDel_step();
         this->gen_02_delay15_step();
@@ -4844,8 +5098,8 @@ void gen_02_perform(
 void gen_01_perform(
     const Sample * in1,
     const Sample * in2,
-    number delayCom,
     number delayAll,
+    number delayCom,
     number mix,
     SampleValue * out1,
     SampleValue * out2,
@@ -4860,16 +5114,16 @@ void gen_01_perform(
         number mul_13_3 = div_12_2 * 0.9;
         number div_14_4 = (scale_11_1 == 0. ? 0. : in2[(Index)i] / scale_11_1);
         number mul_15_5 = div_14_4 * 0.9;
-        number mul1_6 = this->gen_01_del2_read(this->mstosamps(delayCom) / (number)1.321, 0) * 0.9;
-        number mul2_7 = this->gen_01_del3_read(this->mstosamps(delayCom) / (number)1.321, 0) * 0.9;
+        number mul1_6 = this->gen_01_del2_read(this->mstosamps(delayCom), 0) * 0.87;
+        number mul2_7 = this->gen_01_del3_read(this->mstosamps(delayCom), 0) * 0.87;
         number add2_8 = mul_13_3 + mul1_6;
         number add3_9 = mul_15_5 + mul2_7;
         number expr_16_10 = (add2_8 > 1 ? 1 : (add2_8 < -1 ? -1 : add2_8));
         number expr_17_11 = (add3_9 > 1 ? 1 : (add3_9 < -1 ? -1 : add3_9));
         this->gen_01_del2_write(add2_8 + mul_13_3);
         this->gen_01_del3_write(add3_9 + mul_15_5);
-        number mul_18_12 = this->gen_01_del_1_read(this->mstosamps(delayCom) / (number)1.197, 0) * 0.89;
-        number mul_19_13 = this->gen_01_del_2_read(this->mstosamps(delayCom) / (number)1.197, 0) * 0.89;
+        number mul_18_12 = this->gen_01_del_1_read(this->mstosamps(delayCom) / (number)1.321, 0) * 0.9;
+        number mul_19_13 = this->gen_01_del_2_read(this->mstosamps(delayCom) / (number)1.321, 0) * 0.9;
         number add_20_14 = mul_13_3 + mul_18_12;
         number add_21_15 = mul_15_5 + mul_19_13;
         number expr_22_16 = (add_20_14 > 1 ? 1 : (add_20_14 < -1 ? -1 : add_20_14));
@@ -4884,16 +5138,16 @@ void gen_01_perform(
         number expr_29_23 = (add_27_21 > 1 ? 1 : (add_27_21 < -1 ? -1 : add_27_21));
         this->gen_01_del_3_write(add_26_20 + mul_13_3);
         this->gen_01_del_4_write(add_27_21 + mul_15_5);
-        number mul_30_24 = this->gen_01_del_5_read(this->mstosamps(delayCom), 0) * 0.87;
-        number mul_31_25 = this->gen_01_del_6_read(this->mstosamps(delayCom), 0) * 0.87;
+        number mul_30_24 = this->gen_01_del_5_read(this->mstosamps(delayCom) / (number)1.197, 0) * 0.89;
+        number mul_31_25 = this->gen_01_del_6_read(this->mstosamps(delayCom) / (number)1.197, 0) * 0.89;
         number add_32_26 = mul_13_3 + mul_30_24;
         number add_33_27 = mul_15_5 + mul_31_25;
         number expr_34_28 = (add_32_26 > 1 ? 1 : (add_32_26 < -1 ? -1 : add_32_26));
         number expr_35_29 = (add_33_27 > 1 ? 1 : (add_33_27 < -1 ? -1 : add_33_27));
         this->gen_01_del_5_write(add_32_26 + mul_13_3);
         this->gen_01_del_6_write(add_33_27 + mul_15_5);
-        number add_36_30 = expr_34_28 + expr_22_16 + (expr_16_10 + expr_28_22);
-        number add_37_31 = expr_35_29 + expr_23_17 + expr_17_11 + expr_29_23 + 0;
+        number add_36_30 = expr_34_28 + expr_16_10 + (expr_28_22 + expr_22_16);
+        number add_37_31 = expr_29_23 + expr_23_17 + expr_35_29 + expr_17_11 + 0;
         number tap1_32 = this->gen_01_del_7_read(this->mstosamps(delayAll), 0);
         number tap2_33 = this->gen_01_del_7_read(this->mstosamps(delayAll), 0);
         number add1_34 = add_36_30 + tap1_32 * 0.7 * -1;
@@ -4957,6 +5211,47 @@ void dspexpr_03_perform(
     for (i = 0; i < n; i++) {
         out1[(Index)i] = in1[(Index)i] + in3 * (in2[(Index)i] - in1[(Index)i]);//#map:_###_obj_###_:1
     }
+}
+
+void numbertilde_01_perform(const SampleValue * input_signal, SampleValue * output, Index n) {
+    auto __numbertilde_01_currentIntervalInSamples = this->numbertilde_01_currentIntervalInSamples;
+    auto __numbertilde_01_lastValue = this->numbertilde_01_lastValue;
+    auto __numbertilde_01_currentInterval = this->numbertilde_01_currentInterval;
+    auto __numbertilde_01_rampInSamples = this->numbertilde_01_rampInSamples;
+    auto __numbertilde_01_outValue = this->numbertilde_01_outValue;
+    auto __numbertilde_01_currentMode = this->numbertilde_01_currentMode;
+    number monitorvalue = input_signal[0];
+
+    for (Index i = 0; i < n; i++) {
+        if (__numbertilde_01_currentMode == 0) {
+            output[(Index)i] = this->numbertilde_01_smooth_next(
+                __numbertilde_01_outValue,
+                __numbertilde_01_rampInSamples,
+                __numbertilde_01_rampInSamples
+            );
+        } else {
+            output[(Index)i] = input_signal[(Index)i];
+        }
+    }
+
+    __numbertilde_01_currentInterval -= n;
+
+    if (monitorvalue != __numbertilde_01_lastValue && __numbertilde_01_currentInterval <= 0) {
+        __numbertilde_01_currentInterval = __numbertilde_01_currentIntervalInSamples;
+
+        this->getEngine()->scheduleClockEventWithValue(
+            this,
+            2098551528,
+            this->sampsToMs((SampleIndex)(this->vs)) + this->_currentTime,
+            monitorvalue
+        );;
+
+        __numbertilde_01_lastValue = monitorvalue;
+        this->getEngine()->sendListMessage(TAG("monitor"), TAG("number~_obj-71"), {monitorvalue}, this->_currentTime);;
+    }
+
+    this->numbertilde_01_currentInterval = __numbertilde_01_currentInterval;
+    this->numbertilde_01_lastValue = __numbertilde_01_lastValue;
 }
 
 void stackprotect_perform(Index n) {
@@ -8108,416 +8403,416 @@ void gen_02_cycle_50_bufferUpdated() {
     this->gen_02_cycle_50_wrap = (long)(this->gen_02_cycle_50_buffer->getSize()) - 1;
 }
 
-number gen_02_phasor_71_next(number freq, number reset) {
+number gen_02_phasor_79_next(number freq, number reset) {
     RNBO_UNUSED(reset);
-    number pincr = freq * this->gen_02_phasor_71_conv;
+    number pincr = freq * this->gen_02_phasor_79_conv;
 
-    if (this->gen_02_phasor_71_currentPhase < 0.)
-        this->gen_02_phasor_71_currentPhase = 1. + this->gen_02_phasor_71_currentPhase;
+    if (this->gen_02_phasor_79_currentPhase < 0.)
+        this->gen_02_phasor_79_currentPhase = 1. + this->gen_02_phasor_79_currentPhase;
 
-    if (this->gen_02_phasor_71_currentPhase > 1.)
-        this->gen_02_phasor_71_currentPhase = this->gen_02_phasor_71_currentPhase - 1.;
+    if (this->gen_02_phasor_79_currentPhase > 1.)
+        this->gen_02_phasor_79_currentPhase = this->gen_02_phasor_79_currentPhase - 1.;
 
-    number tmp = this->gen_02_phasor_71_currentPhase;
-    this->gen_02_phasor_71_currentPhase += pincr;
+    number tmp = this->gen_02_phasor_79_currentPhase;
+    this->gen_02_phasor_79_currentPhase += pincr;
     return tmp;
 }
 
-void gen_02_phasor_71_reset() {
-    this->gen_02_phasor_71_currentPhase = 0;
+void gen_02_phasor_79_reset() {
+    this->gen_02_phasor_79_currentPhase = 0;
 }
 
-void gen_02_phasor_71_dspsetup() {
-    this->gen_02_phasor_71_conv = (this->sr == 0. ? 0. : (number)1 / this->sr);
+void gen_02_phasor_79_dspsetup() {
+    this->gen_02_phasor_79_conv = (this->sr == 0. ? 0. : (number)1 / this->sr);
 }
 
-number gen_02_phasor_77_next(number freq, number reset) {
+number gen_02_phasor_85_next(number freq, number reset) {
     RNBO_UNUSED(reset);
-    number pincr = freq * this->gen_02_phasor_77_conv;
+    number pincr = freq * this->gen_02_phasor_85_conv;
 
-    if (this->gen_02_phasor_77_currentPhase < 0.)
-        this->gen_02_phasor_77_currentPhase = 1. + this->gen_02_phasor_77_currentPhase;
+    if (this->gen_02_phasor_85_currentPhase < 0.)
+        this->gen_02_phasor_85_currentPhase = 1. + this->gen_02_phasor_85_currentPhase;
 
-    if (this->gen_02_phasor_77_currentPhase > 1.)
-        this->gen_02_phasor_77_currentPhase = this->gen_02_phasor_77_currentPhase - 1.;
+    if (this->gen_02_phasor_85_currentPhase > 1.)
+        this->gen_02_phasor_85_currentPhase = this->gen_02_phasor_85_currentPhase - 1.;
 
-    number tmp = this->gen_02_phasor_77_currentPhase;
-    this->gen_02_phasor_77_currentPhase += pincr;
+    number tmp = this->gen_02_phasor_85_currentPhase;
+    this->gen_02_phasor_85_currentPhase += pincr;
     return tmp;
 }
 
-void gen_02_phasor_77_reset() {
-    this->gen_02_phasor_77_currentPhase = 0;
+void gen_02_phasor_85_reset() {
+    this->gen_02_phasor_85_currentPhase = 0;
 }
 
-void gen_02_phasor_77_dspsetup() {
-    this->gen_02_phasor_77_conv = (this->sr == 0. ? 0. : (number)1 / this->sr);
+void gen_02_phasor_85_dspsetup() {
+    this->gen_02_phasor_85_conv = (this->sr == 0. ? 0. : (number)1 / this->sr);
 }
 
-number gen_02_phasor_83_next(number freq, number reset) {
+number gen_02_phasor_91_next(number freq, number reset) {
     RNBO_UNUSED(reset);
-    number pincr = freq * this->gen_02_phasor_83_conv;
+    number pincr = freq * this->gen_02_phasor_91_conv;
 
-    if (this->gen_02_phasor_83_currentPhase < 0.)
-        this->gen_02_phasor_83_currentPhase = 1. + this->gen_02_phasor_83_currentPhase;
+    if (this->gen_02_phasor_91_currentPhase < 0.)
+        this->gen_02_phasor_91_currentPhase = 1. + this->gen_02_phasor_91_currentPhase;
 
-    if (this->gen_02_phasor_83_currentPhase > 1.)
-        this->gen_02_phasor_83_currentPhase = this->gen_02_phasor_83_currentPhase - 1.;
+    if (this->gen_02_phasor_91_currentPhase > 1.)
+        this->gen_02_phasor_91_currentPhase = this->gen_02_phasor_91_currentPhase - 1.;
 
-    number tmp = this->gen_02_phasor_83_currentPhase;
-    this->gen_02_phasor_83_currentPhase += pincr;
+    number tmp = this->gen_02_phasor_91_currentPhase;
+    this->gen_02_phasor_91_currentPhase += pincr;
     return tmp;
 }
 
-void gen_02_phasor_83_reset() {
-    this->gen_02_phasor_83_currentPhase = 0;
+void gen_02_phasor_91_reset() {
+    this->gen_02_phasor_91_currentPhase = 0;
 }
 
-void gen_02_phasor_83_dspsetup() {
-    this->gen_02_phasor_83_conv = (this->sr == 0. ? 0. : (number)1 / this->sr);
+void gen_02_phasor_91_dspsetup() {
+    this->gen_02_phasor_91_conv = (this->sr == 0. ? 0. : (number)1 / this->sr);
 }
 
-number gen_02_phasor_89_next(number freq, number reset) {
+number gen_02_phasor_97_next(number freq, number reset) {
     RNBO_UNUSED(reset);
-    number pincr = freq * this->gen_02_phasor_89_conv;
+    number pincr = freq * this->gen_02_phasor_97_conv;
 
-    if (this->gen_02_phasor_89_currentPhase < 0.)
-        this->gen_02_phasor_89_currentPhase = 1. + this->gen_02_phasor_89_currentPhase;
+    if (this->gen_02_phasor_97_currentPhase < 0.)
+        this->gen_02_phasor_97_currentPhase = 1. + this->gen_02_phasor_97_currentPhase;
 
-    if (this->gen_02_phasor_89_currentPhase > 1.)
-        this->gen_02_phasor_89_currentPhase = this->gen_02_phasor_89_currentPhase - 1.;
+    if (this->gen_02_phasor_97_currentPhase > 1.)
+        this->gen_02_phasor_97_currentPhase = this->gen_02_phasor_97_currentPhase - 1.;
 
-    number tmp = this->gen_02_phasor_89_currentPhase;
-    this->gen_02_phasor_89_currentPhase += pincr;
+    number tmp = this->gen_02_phasor_97_currentPhase;
+    this->gen_02_phasor_97_currentPhase += pincr;
     return tmp;
 }
 
-void gen_02_phasor_89_reset() {
-    this->gen_02_phasor_89_currentPhase = 0;
+void gen_02_phasor_97_reset() {
+    this->gen_02_phasor_97_currentPhase = 0;
 }
 
-void gen_02_phasor_89_dspsetup() {
-    this->gen_02_phasor_89_conv = (this->sr == 0. ? 0. : (number)1 / this->sr);
+void gen_02_phasor_97_dspsetup() {
+    this->gen_02_phasor_97_conv = (this->sr == 0. ? 0. : (number)1 / this->sr);
 }
 
-number gen_02_phasor_95_next(number freq, number reset) {
+number gen_02_phasor_103_next(number freq, number reset) {
     RNBO_UNUSED(reset);
-    number pincr = freq * this->gen_02_phasor_95_conv;
+    number pincr = freq * this->gen_02_phasor_103_conv;
 
-    if (this->gen_02_phasor_95_currentPhase < 0.)
-        this->gen_02_phasor_95_currentPhase = 1. + this->gen_02_phasor_95_currentPhase;
+    if (this->gen_02_phasor_103_currentPhase < 0.)
+        this->gen_02_phasor_103_currentPhase = 1. + this->gen_02_phasor_103_currentPhase;
 
-    if (this->gen_02_phasor_95_currentPhase > 1.)
-        this->gen_02_phasor_95_currentPhase = this->gen_02_phasor_95_currentPhase - 1.;
+    if (this->gen_02_phasor_103_currentPhase > 1.)
+        this->gen_02_phasor_103_currentPhase = this->gen_02_phasor_103_currentPhase - 1.;
 
-    number tmp = this->gen_02_phasor_95_currentPhase;
-    this->gen_02_phasor_95_currentPhase += pincr;
+    number tmp = this->gen_02_phasor_103_currentPhase;
+    this->gen_02_phasor_103_currentPhase += pincr;
     return tmp;
 }
 
-void gen_02_phasor_95_reset() {
-    this->gen_02_phasor_95_currentPhase = 0;
+void gen_02_phasor_103_reset() {
+    this->gen_02_phasor_103_currentPhase = 0;
 }
 
-void gen_02_phasor_95_dspsetup() {
-    this->gen_02_phasor_95_conv = (this->sr == 0. ? 0. : (number)1 / this->sr);
+void gen_02_phasor_103_dspsetup() {
+    this->gen_02_phasor_103_conv = (this->sr == 0. ? 0. : (number)1 / this->sr);
 }
 
-number gen_02_phasor_101_next(number freq, number reset) {
+number gen_02_phasor_109_next(number freq, number reset) {
     RNBO_UNUSED(reset);
-    number pincr = freq * this->gen_02_phasor_101_conv;
+    number pincr = freq * this->gen_02_phasor_109_conv;
 
-    if (this->gen_02_phasor_101_currentPhase < 0.)
-        this->gen_02_phasor_101_currentPhase = 1. + this->gen_02_phasor_101_currentPhase;
+    if (this->gen_02_phasor_109_currentPhase < 0.)
+        this->gen_02_phasor_109_currentPhase = 1. + this->gen_02_phasor_109_currentPhase;
 
-    if (this->gen_02_phasor_101_currentPhase > 1.)
-        this->gen_02_phasor_101_currentPhase = this->gen_02_phasor_101_currentPhase - 1.;
+    if (this->gen_02_phasor_109_currentPhase > 1.)
+        this->gen_02_phasor_109_currentPhase = this->gen_02_phasor_109_currentPhase - 1.;
 
-    number tmp = this->gen_02_phasor_101_currentPhase;
-    this->gen_02_phasor_101_currentPhase += pincr;
+    number tmp = this->gen_02_phasor_109_currentPhase;
+    this->gen_02_phasor_109_currentPhase += pincr;
     return tmp;
 }
 
-void gen_02_phasor_101_reset() {
-    this->gen_02_phasor_101_currentPhase = 0;
+void gen_02_phasor_109_reset() {
+    this->gen_02_phasor_109_currentPhase = 0;
 }
 
-void gen_02_phasor_101_dspsetup() {
-    this->gen_02_phasor_101_conv = (this->sr == 0. ? 0. : (number)1 / this->sr);
+void gen_02_phasor_109_dspsetup() {
+    this->gen_02_phasor_109_conv = (this->sr == 0. ? 0. : (number)1 / this->sr);
 }
 
-number gen_02_phasor_107_next(number freq, number reset) {
+number gen_02_phasor_115_next(number freq, number reset) {
     RNBO_UNUSED(reset);
-    number pincr = freq * this->gen_02_phasor_107_conv;
+    number pincr = freq * this->gen_02_phasor_115_conv;
 
-    if (this->gen_02_phasor_107_currentPhase < 0.)
-        this->gen_02_phasor_107_currentPhase = 1. + this->gen_02_phasor_107_currentPhase;
+    if (this->gen_02_phasor_115_currentPhase < 0.)
+        this->gen_02_phasor_115_currentPhase = 1. + this->gen_02_phasor_115_currentPhase;
 
-    if (this->gen_02_phasor_107_currentPhase > 1.)
-        this->gen_02_phasor_107_currentPhase = this->gen_02_phasor_107_currentPhase - 1.;
+    if (this->gen_02_phasor_115_currentPhase > 1.)
+        this->gen_02_phasor_115_currentPhase = this->gen_02_phasor_115_currentPhase - 1.;
 
-    number tmp = this->gen_02_phasor_107_currentPhase;
-    this->gen_02_phasor_107_currentPhase += pincr;
+    number tmp = this->gen_02_phasor_115_currentPhase;
+    this->gen_02_phasor_115_currentPhase += pincr;
     return tmp;
 }
 
-void gen_02_phasor_107_reset() {
-    this->gen_02_phasor_107_currentPhase = 0;
+void gen_02_phasor_115_reset() {
+    this->gen_02_phasor_115_currentPhase = 0;
 }
 
-void gen_02_phasor_107_dspsetup() {
-    this->gen_02_phasor_107_conv = (this->sr == 0. ? 0. : (number)1 / this->sr);
+void gen_02_phasor_115_dspsetup() {
+    this->gen_02_phasor_115_conv = (this->sr == 0. ? 0. : (number)1 / this->sr);
 }
 
-number gen_02_phasor_113_next(number freq, number reset) {
+number gen_02_phasor_121_next(number freq, number reset) {
     RNBO_UNUSED(reset);
-    number pincr = freq * this->gen_02_phasor_113_conv;
+    number pincr = freq * this->gen_02_phasor_121_conv;
 
-    if (this->gen_02_phasor_113_currentPhase < 0.)
-        this->gen_02_phasor_113_currentPhase = 1. + this->gen_02_phasor_113_currentPhase;
+    if (this->gen_02_phasor_121_currentPhase < 0.)
+        this->gen_02_phasor_121_currentPhase = 1. + this->gen_02_phasor_121_currentPhase;
 
-    if (this->gen_02_phasor_113_currentPhase > 1.)
-        this->gen_02_phasor_113_currentPhase = this->gen_02_phasor_113_currentPhase - 1.;
+    if (this->gen_02_phasor_121_currentPhase > 1.)
+        this->gen_02_phasor_121_currentPhase = this->gen_02_phasor_121_currentPhase - 1.;
 
-    number tmp = this->gen_02_phasor_113_currentPhase;
-    this->gen_02_phasor_113_currentPhase += pincr;
+    number tmp = this->gen_02_phasor_121_currentPhase;
+    this->gen_02_phasor_121_currentPhase += pincr;
     return tmp;
 }
 
-void gen_02_phasor_113_reset() {
-    this->gen_02_phasor_113_currentPhase = 0;
+void gen_02_phasor_121_reset() {
+    this->gen_02_phasor_121_currentPhase = 0;
 }
 
-void gen_02_phasor_113_dspsetup() {
-    this->gen_02_phasor_113_conv = (this->sr == 0. ? 0. : (number)1 / this->sr);
+void gen_02_phasor_121_dspsetup() {
+    this->gen_02_phasor_121_conv = (this->sr == 0. ? 0. : (number)1 / this->sr);
 }
 
-number gen_02_phasor_119_next(number freq, number reset) {
+number gen_02_phasor_127_next(number freq, number reset) {
     RNBO_UNUSED(reset);
-    number pincr = freq * this->gen_02_phasor_119_conv;
+    number pincr = freq * this->gen_02_phasor_127_conv;
 
-    if (this->gen_02_phasor_119_currentPhase < 0.)
-        this->gen_02_phasor_119_currentPhase = 1. + this->gen_02_phasor_119_currentPhase;
+    if (this->gen_02_phasor_127_currentPhase < 0.)
+        this->gen_02_phasor_127_currentPhase = 1. + this->gen_02_phasor_127_currentPhase;
 
-    if (this->gen_02_phasor_119_currentPhase > 1.)
-        this->gen_02_phasor_119_currentPhase = this->gen_02_phasor_119_currentPhase - 1.;
+    if (this->gen_02_phasor_127_currentPhase > 1.)
+        this->gen_02_phasor_127_currentPhase = this->gen_02_phasor_127_currentPhase - 1.;
 
-    number tmp = this->gen_02_phasor_119_currentPhase;
-    this->gen_02_phasor_119_currentPhase += pincr;
+    number tmp = this->gen_02_phasor_127_currentPhase;
+    this->gen_02_phasor_127_currentPhase += pincr;
     return tmp;
 }
 
-void gen_02_phasor_119_reset() {
-    this->gen_02_phasor_119_currentPhase = 0;
+void gen_02_phasor_127_reset() {
+    this->gen_02_phasor_127_currentPhase = 0;
 }
 
-void gen_02_phasor_119_dspsetup() {
-    this->gen_02_phasor_119_conv = (this->sr == 0. ? 0. : (number)1 / this->sr);
+void gen_02_phasor_127_dspsetup() {
+    this->gen_02_phasor_127_conv = (this->sr == 0. ? 0. : (number)1 / this->sr);
 }
 
-number gen_02_phasor_125_next(number freq, number reset) {
+number gen_02_phasor_133_next(number freq, number reset) {
     RNBO_UNUSED(reset);
-    number pincr = freq * this->gen_02_phasor_125_conv;
+    number pincr = freq * this->gen_02_phasor_133_conv;
 
-    if (this->gen_02_phasor_125_currentPhase < 0.)
-        this->gen_02_phasor_125_currentPhase = 1. + this->gen_02_phasor_125_currentPhase;
+    if (this->gen_02_phasor_133_currentPhase < 0.)
+        this->gen_02_phasor_133_currentPhase = 1. + this->gen_02_phasor_133_currentPhase;
 
-    if (this->gen_02_phasor_125_currentPhase > 1.)
-        this->gen_02_phasor_125_currentPhase = this->gen_02_phasor_125_currentPhase - 1.;
+    if (this->gen_02_phasor_133_currentPhase > 1.)
+        this->gen_02_phasor_133_currentPhase = this->gen_02_phasor_133_currentPhase - 1.;
 
-    number tmp = this->gen_02_phasor_125_currentPhase;
-    this->gen_02_phasor_125_currentPhase += pincr;
+    number tmp = this->gen_02_phasor_133_currentPhase;
+    this->gen_02_phasor_133_currentPhase += pincr;
     return tmp;
 }
 
-void gen_02_phasor_125_reset() {
-    this->gen_02_phasor_125_currentPhase = 0;
+void gen_02_phasor_133_reset() {
+    this->gen_02_phasor_133_currentPhase = 0;
 }
 
-void gen_02_phasor_125_dspsetup() {
-    this->gen_02_phasor_125_conv = (this->sr == 0. ? 0. : (number)1 / this->sr);
+void gen_02_phasor_133_dspsetup() {
+    this->gen_02_phasor_133_conv = (this->sr == 0. ? 0. : (number)1 / this->sr);
 }
 
-number gen_02_phasor_131_next(number freq, number reset) {
+number gen_02_phasor_139_next(number freq, number reset) {
     RNBO_UNUSED(reset);
-    number pincr = freq * this->gen_02_phasor_131_conv;
+    number pincr = freq * this->gen_02_phasor_139_conv;
 
-    if (this->gen_02_phasor_131_currentPhase < 0.)
-        this->gen_02_phasor_131_currentPhase = 1. + this->gen_02_phasor_131_currentPhase;
+    if (this->gen_02_phasor_139_currentPhase < 0.)
+        this->gen_02_phasor_139_currentPhase = 1. + this->gen_02_phasor_139_currentPhase;
 
-    if (this->gen_02_phasor_131_currentPhase > 1.)
-        this->gen_02_phasor_131_currentPhase = this->gen_02_phasor_131_currentPhase - 1.;
+    if (this->gen_02_phasor_139_currentPhase > 1.)
+        this->gen_02_phasor_139_currentPhase = this->gen_02_phasor_139_currentPhase - 1.;
 
-    number tmp = this->gen_02_phasor_131_currentPhase;
-    this->gen_02_phasor_131_currentPhase += pincr;
+    number tmp = this->gen_02_phasor_139_currentPhase;
+    this->gen_02_phasor_139_currentPhase += pincr;
     return tmp;
 }
 
-void gen_02_phasor_131_reset() {
-    this->gen_02_phasor_131_currentPhase = 0;
+void gen_02_phasor_139_reset() {
+    this->gen_02_phasor_139_currentPhase = 0;
 }
 
-void gen_02_phasor_131_dspsetup() {
-    this->gen_02_phasor_131_conv = (this->sr == 0. ? 0. : (number)1 / this->sr);
+void gen_02_phasor_139_dspsetup() {
+    this->gen_02_phasor_139_conv = (this->sr == 0. ? 0. : (number)1 / this->sr);
 }
 
-number gen_02_phasor_137_next(number freq, number reset) {
+number gen_02_phasor_145_next(number freq, number reset) {
     RNBO_UNUSED(reset);
-    number pincr = freq * this->gen_02_phasor_137_conv;
+    number pincr = freq * this->gen_02_phasor_145_conv;
 
-    if (this->gen_02_phasor_137_currentPhase < 0.)
-        this->gen_02_phasor_137_currentPhase = 1. + this->gen_02_phasor_137_currentPhase;
+    if (this->gen_02_phasor_145_currentPhase < 0.)
+        this->gen_02_phasor_145_currentPhase = 1. + this->gen_02_phasor_145_currentPhase;
 
-    if (this->gen_02_phasor_137_currentPhase > 1.)
-        this->gen_02_phasor_137_currentPhase = this->gen_02_phasor_137_currentPhase - 1.;
+    if (this->gen_02_phasor_145_currentPhase > 1.)
+        this->gen_02_phasor_145_currentPhase = this->gen_02_phasor_145_currentPhase - 1.;
 
-    number tmp = this->gen_02_phasor_137_currentPhase;
-    this->gen_02_phasor_137_currentPhase += pincr;
+    number tmp = this->gen_02_phasor_145_currentPhase;
+    this->gen_02_phasor_145_currentPhase += pincr;
     return tmp;
 }
 
-void gen_02_phasor_137_reset() {
-    this->gen_02_phasor_137_currentPhase = 0;
+void gen_02_phasor_145_reset() {
+    this->gen_02_phasor_145_currentPhase = 0;
 }
 
-void gen_02_phasor_137_dspsetup() {
-    this->gen_02_phasor_137_conv = (this->sr == 0. ? 0. : (number)1 / this->sr);
+void gen_02_phasor_145_dspsetup() {
+    this->gen_02_phasor_145_conv = (this->sr == 0. ? 0. : (number)1 / this->sr);
 }
 
-number gen_02_phasor_143_next(number freq, number reset) {
+number gen_02_phasor_151_next(number freq, number reset) {
     RNBO_UNUSED(reset);
-    number pincr = freq * this->gen_02_phasor_143_conv;
+    number pincr = freq * this->gen_02_phasor_151_conv;
 
-    if (this->gen_02_phasor_143_currentPhase < 0.)
-        this->gen_02_phasor_143_currentPhase = 1. + this->gen_02_phasor_143_currentPhase;
+    if (this->gen_02_phasor_151_currentPhase < 0.)
+        this->gen_02_phasor_151_currentPhase = 1. + this->gen_02_phasor_151_currentPhase;
 
-    if (this->gen_02_phasor_143_currentPhase > 1.)
-        this->gen_02_phasor_143_currentPhase = this->gen_02_phasor_143_currentPhase - 1.;
+    if (this->gen_02_phasor_151_currentPhase > 1.)
+        this->gen_02_phasor_151_currentPhase = this->gen_02_phasor_151_currentPhase - 1.;
 
-    number tmp = this->gen_02_phasor_143_currentPhase;
-    this->gen_02_phasor_143_currentPhase += pincr;
+    number tmp = this->gen_02_phasor_151_currentPhase;
+    this->gen_02_phasor_151_currentPhase += pincr;
     return tmp;
 }
 
-void gen_02_phasor_143_reset() {
-    this->gen_02_phasor_143_currentPhase = 0;
+void gen_02_phasor_151_reset() {
+    this->gen_02_phasor_151_currentPhase = 0;
 }
 
-void gen_02_phasor_143_dspsetup() {
-    this->gen_02_phasor_143_conv = (this->sr == 0. ? 0. : (number)1 / this->sr);
+void gen_02_phasor_151_dspsetup() {
+    this->gen_02_phasor_151_conv = (this->sr == 0. ? 0. : (number)1 / this->sr);
 }
 
-number gen_02_phasor_149_next(number freq, number reset) {
+number gen_02_phasor_157_next(number freq, number reset) {
     RNBO_UNUSED(reset);
-    number pincr = freq * this->gen_02_phasor_149_conv;
+    number pincr = freq * this->gen_02_phasor_157_conv;
 
-    if (this->gen_02_phasor_149_currentPhase < 0.)
-        this->gen_02_phasor_149_currentPhase = 1. + this->gen_02_phasor_149_currentPhase;
+    if (this->gen_02_phasor_157_currentPhase < 0.)
+        this->gen_02_phasor_157_currentPhase = 1. + this->gen_02_phasor_157_currentPhase;
 
-    if (this->gen_02_phasor_149_currentPhase > 1.)
-        this->gen_02_phasor_149_currentPhase = this->gen_02_phasor_149_currentPhase - 1.;
+    if (this->gen_02_phasor_157_currentPhase > 1.)
+        this->gen_02_phasor_157_currentPhase = this->gen_02_phasor_157_currentPhase - 1.;
 
-    number tmp = this->gen_02_phasor_149_currentPhase;
-    this->gen_02_phasor_149_currentPhase += pincr;
+    number tmp = this->gen_02_phasor_157_currentPhase;
+    this->gen_02_phasor_157_currentPhase += pincr;
     return tmp;
 }
 
-void gen_02_phasor_149_reset() {
-    this->gen_02_phasor_149_currentPhase = 0;
+void gen_02_phasor_157_reset() {
+    this->gen_02_phasor_157_currentPhase = 0;
 }
 
-void gen_02_phasor_149_dspsetup() {
-    this->gen_02_phasor_149_conv = (this->sr == 0. ? 0. : (number)1 / this->sr);
+void gen_02_phasor_157_dspsetup() {
+    this->gen_02_phasor_157_conv = (this->sr == 0. ? 0. : (number)1 / this->sr);
 }
 
-number gen_02_phasor_155_next(number freq, number reset) {
+number gen_02_phasor_163_next(number freq, number reset) {
     RNBO_UNUSED(reset);
-    number pincr = freq * this->gen_02_phasor_155_conv;
+    number pincr = freq * this->gen_02_phasor_163_conv;
 
-    if (this->gen_02_phasor_155_currentPhase < 0.)
-        this->gen_02_phasor_155_currentPhase = 1. + this->gen_02_phasor_155_currentPhase;
+    if (this->gen_02_phasor_163_currentPhase < 0.)
+        this->gen_02_phasor_163_currentPhase = 1. + this->gen_02_phasor_163_currentPhase;
 
-    if (this->gen_02_phasor_155_currentPhase > 1.)
-        this->gen_02_phasor_155_currentPhase = this->gen_02_phasor_155_currentPhase - 1.;
+    if (this->gen_02_phasor_163_currentPhase > 1.)
+        this->gen_02_phasor_163_currentPhase = this->gen_02_phasor_163_currentPhase - 1.;
 
-    number tmp = this->gen_02_phasor_155_currentPhase;
-    this->gen_02_phasor_155_currentPhase += pincr;
+    number tmp = this->gen_02_phasor_163_currentPhase;
+    this->gen_02_phasor_163_currentPhase += pincr;
     return tmp;
 }
 
-void gen_02_phasor_155_reset() {
-    this->gen_02_phasor_155_currentPhase = 0;
+void gen_02_phasor_163_reset() {
+    this->gen_02_phasor_163_currentPhase = 0;
 }
 
-void gen_02_phasor_155_dspsetup() {
-    this->gen_02_phasor_155_conv = (this->sr == 0. ? 0. : (number)1 / this->sr);
+void gen_02_phasor_163_dspsetup() {
+    this->gen_02_phasor_163_conv = (this->sr == 0. ? 0. : (number)1 / this->sr);
 }
 
-number gen_02_cycle_157_ph_next(number freq, number reset) {
+number gen_02_cycle_165_ph_next(number freq, number reset) {
     RNBO_UNUSED(reset);
 
     {
         {}
     }
 
-    number pincr = freq * this->gen_02_cycle_157_ph_conv;
+    number pincr = freq * this->gen_02_cycle_165_ph_conv;
 
-    if (this->gen_02_cycle_157_ph_currentPhase < 0.)
-        this->gen_02_cycle_157_ph_currentPhase = 1. + this->gen_02_cycle_157_ph_currentPhase;
+    if (this->gen_02_cycle_165_ph_currentPhase < 0.)
+        this->gen_02_cycle_165_ph_currentPhase = 1. + this->gen_02_cycle_165_ph_currentPhase;
 
-    if (this->gen_02_cycle_157_ph_currentPhase > 1.)
-        this->gen_02_cycle_157_ph_currentPhase = this->gen_02_cycle_157_ph_currentPhase - 1.;
+    if (this->gen_02_cycle_165_ph_currentPhase > 1.)
+        this->gen_02_cycle_165_ph_currentPhase = this->gen_02_cycle_165_ph_currentPhase - 1.;
 
-    number tmp = this->gen_02_cycle_157_ph_currentPhase;
-    this->gen_02_cycle_157_ph_currentPhase += pincr;
+    number tmp = this->gen_02_cycle_165_ph_currentPhase;
+    this->gen_02_cycle_165_ph_currentPhase += pincr;
     return tmp;
 }
 
-void gen_02_cycle_157_ph_reset() {
-    this->gen_02_cycle_157_ph_currentPhase = 0;
+void gen_02_cycle_165_ph_reset() {
+    this->gen_02_cycle_165_ph_currentPhase = 0;
 }
 
-void gen_02_cycle_157_ph_dspsetup() {
-    this->gen_02_cycle_157_ph_conv = (this->sr == 0. ? 0. : (number)1 / this->sr);
+void gen_02_cycle_165_ph_dspsetup() {
+    this->gen_02_cycle_165_ph_conv = (this->sr == 0. ? 0. : (number)1 / this->sr);
 }
 
-array<number, 2> gen_02_cycle_157_next(number frequency, number phase_offset) {
+array<number, 2> gen_02_cycle_165_next(number frequency, number phase_offset) {
     RNBO_UNUSED(phase_offset);
 
     {
         uint32_t uint_phase;
 
         {
-            uint_phase = this->gen_02_cycle_157_phasei;
+            uint_phase = this->gen_02_cycle_165_phasei;
         }
 
         uint32_t idx = (uint32_t)(uint32_rshift(uint_phase, 18));
         number frac = ((BinOpInt)((BinOpInt)uint_phase & (BinOpInt)262143)) * 3.81471181759574e-6;
-        number y0 = this->gen_02_cycle_157_buffer[(Index)idx];
-        number y1 = this->gen_02_cycle_157_buffer[(Index)((BinOpInt)(idx + 1) & (BinOpInt)16383)];
+        number y0 = this->gen_02_cycle_165_buffer[(Index)idx];
+        number y1 = this->gen_02_cycle_165_buffer[(Index)((BinOpInt)(idx + 1) & (BinOpInt)16383)];
         number y = y0 + frac * (y1 - y0);
 
         {
-            uint32_t pincr = (uint32_t)(uint32_trunc(frequency * this->gen_02_cycle_157_f2i));
-            this->gen_02_cycle_157_phasei = uint32_add(this->gen_02_cycle_157_phasei, pincr);
+            uint32_t pincr = (uint32_t)(uint32_trunc(frequency * this->gen_02_cycle_165_f2i));
+            this->gen_02_cycle_165_phasei = uint32_add(this->gen_02_cycle_165_phasei, pincr);
         }
 
         return {y, uint_phase * 0.232830643653869629e-9};
     }
 }
 
-void gen_02_cycle_157_dspsetup() {
-    this->gen_02_cycle_157_phasei = 0;
-    this->gen_02_cycle_157_f2i = (this->samplerate() == 0. ? 0. : (number)4294967296 / this->samplerate());
-    this->gen_02_cycle_157_wrap = (long)(this->gen_02_cycle_157_buffer->getSize()) - 1;
+void gen_02_cycle_165_dspsetup() {
+    this->gen_02_cycle_165_phasei = 0;
+    this->gen_02_cycle_165_f2i = (this->samplerate() == 0. ? 0. : (number)4294967296 / this->samplerate());
+    this->gen_02_cycle_165_wrap = (long)(this->gen_02_cycle_165_buffer->getSize()) - 1;
 }
 
-void gen_02_cycle_157_reset() {
-    this->gen_02_cycle_157_phasei = 0;
+void gen_02_cycle_165_reset() {
+    this->gen_02_cycle_165_phasei = 0;
 }
 
-void gen_02_cycle_157_bufferUpdated() {
-    this->gen_02_cycle_157_wrap = (long)(this->gen_02_cycle_157_buffer->getSize()) - 1;
+void gen_02_cycle_165_bufferUpdated() {
+    this->gen_02_cycle_165_wrap = (long)(this->gen_02_cycle_165_buffer->getSize()) - 1;
 }
 
 void gen_02_dspsetup(bool force) {
@@ -8546,23 +8841,23 @@ void gen_02_dspsetup(bool force) {
     this->gen_02_latch_21_dspsetup();
     this->gen_02_cycle_50_ph_dspsetup();
     this->gen_02_cycle_50_dspsetup();
-    this->gen_02_phasor_71_dspsetup();
-    this->gen_02_phasor_77_dspsetup();
-    this->gen_02_phasor_83_dspsetup();
-    this->gen_02_phasor_89_dspsetup();
-    this->gen_02_phasor_95_dspsetup();
-    this->gen_02_phasor_101_dspsetup();
-    this->gen_02_phasor_107_dspsetup();
-    this->gen_02_phasor_113_dspsetup();
-    this->gen_02_phasor_119_dspsetup();
-    this->gen_02_phasor_125_dspsetup();
-    this->gen_02_phasor_131_dspsetup();
-    this->gen_02_phasor_137_dspsetup();
-    this->gen_02_phasor_143_dspsetup();
-    this->gen_02_phasor_149_dspsetup();
-    this->gen_02_phasor_155_dspsetup();
-    this->gen_02_cycle_157_ph_dspsetup();
-    this->gen_02_cycle_157_dspsetup();
+    this->gen_02_phasor_79_dspsetup();
+    this->gen_02_phasor_85_dspsetup();
+    this->gen_02_phasor_91_dspsetup();
+    this->gen_02_phasor_97_dspsetup();
+    this->gen_02_phasor_103_dspsetup();
+    this->gen_02_phasor_109_dspsetup();
+    this->gen_02_phasor_115_dspsetup();
+    this->gen_02_phasor_121_dspsetup();
+    this->gen_02_phasor_127_dspsetup();
+    this->gen_02_phasor_133_dspsetup();
+    this->gen_02_phasor_139_dspsetup();
+    this->gen_02_phasor_145_dspsetup();
+    this->gen_02_phasor_151_dspsetup();
+    this->gen_02_phasor_157_dspsetup();
+    this->gen_02_phasor_163_dspsetup();
+    this->gen_02_cycle_165_ph_dspsetup();
+    this->gen_02_cycle_165_dspsetup();
 }
 
 template <typename T> void fftstream_tilde_01_fft_next(T& buffer, int fftsize) {
@@ -8762,6 +9057,74 @@ void param_12_setPresetValue(PatcherStateInterface& preset) {
     this->param_12_value_set(preset["value"]);
 }
 
+number numbertilde_01_smooth_d_next(number x) {
+    number temp = (number)(x - this->numbertilde_01_smooth_d_prev);
+    this->numbertilde_01_smooth_d_prev = x;
+    return temp;
+}
+
+void numbertilde_01_smooth_d_dspsetup() {
+    this->numbertilde_01_smooth_d_reset();
+}
+
+void numbertilde_01_smooth_d_reset() {
+    this->numbertilde_01_smooth_d_prev = 0;
+}
+
+number numbertilde_01_smooth_next(number x, number up, number down) {
+    if (this->numbertilde_01_smooth_d_next(x) != 0.) {
+        if (x > this->numbertilde_01_smooth_prev) {
+            number _up = up;
+
+            if (_up < 1)
+                _up = 1;
+
+            this->numbertilde_01_smooth_index = _up;
+            this->numbertilde_01_smooth_increment = (x - this->numbertilde_01_smooth_prev) / _up;
+        } else if (x < this->numbertilde_01_smooth_prev) {
+            number _down = down;
+
+            if (_down < 1)
+                _down = 1;
+
+            this->numbertilde_01_smooth_index = _down;
+            this->numbertilde_01_smooth_increment = (x - this->numbertilde_01_smooth_prev) / _down;
+        }
+    }
+
+    if (this->numbertilde_01_smooth_index > 0) {
+        this->numbertilde_01_smooth_prev += this->numbertilde_01_smooth_increment;
+        this->numbertilde_01_smooth_index -= 1;
+    } else {
+        this->numbertilde_01_smooth_prev = x;
+    }
+
+    return this->numbertilde_01_smooth_prev;
+}
+
+void numbertilde_01_smooth_reset() {
+    this->numbertilde_01_smooth_prev = 0;
+    this->numbertilde_01_smooth_index = 0;
+    this->numbertilde_01_smooth_increment = 0;
+    this->numbertilde_01_smooth_d_reset();
+}
+
+void numbertilde_01_init() {
+    this->numbertilde_01_currentMode = 1;
+    this->getEngine()->sendNumMessage(TAG("setup"), TAG("number~_obj-71"), 1, this->_currentTime);
+}
+
+void numbertilde_01_dspsetup(bool force) {
+    if ((bool)(this->numbertilde_01_setupDone) && (bool)(!(bool)(force)))
+        return;
+
+    this->numbertilde_01_currentIntervalInSamples = this->mstosamps(100);
+    this->numbertilde_01_currentInterval = this->numbertilde_01_currentIntervalInSamples;
+    this->numbertilde_01_rampInSamples = this->mstosamps(this->numbertilde_01_ramp);
+    this->numbertilde_01_setupDone = true;
+    this->numbertilde_01_smooth_d_dspsetup();
+}
+
 void param_13_getPresetValue(PatcherStateInterface& preset) {
     preset["value"] = this->param_13_value;
 }
@@ -8925,6 +9288,39 @@ void param_27_setPresetValue(PatcherStateInterface& preset) {
         return;
 
     this->param_27_value_set(preset["value"]);
+}
+
+void param_28_getPresetValue(PatcherStateInterface& preset) {
+    preset["value"] = this->param_28_value;
+}
+
+void param_28_setPresetValue(PatcherStateInterface& preset) {
+    if ((bool)(stateIsEmpty(preset)))
+        return;
+
+    this->param_28_value_set(preset["value"]);
+}
+
+void param_29_getPresetValue(PatcherStateInterface& preset) {
+    preset["value"] = this->param_29_value;
+}
+
+void param_29_setPresetValue(PatcherStateInterface& preset) {
+    if ((bool)(stateIsEmpty(preset)))
+        return;
+
+    this->param_29_value_set(preset["value"]);
+}
+
+void param_30_getPresetValue(PatcherStateInterface& preset) {
+    preset["value"] = this->param_30_value;
+}
+
+void param_30_setPresetValue(PatcherStateInterface& preset) {
+    if ((bool)(stateIsEmpty(preset)))
+        return;
+
+    this->param_30_value_set(preset["value"]);
 }
 
 Index globaltransport_getSampleOffset(MillisecondTime time) {
@@ -9167,8 +9563,8 @@ void assign_defaults()
     param_06_value = 0;
     gen_01_in1 = 0;
     gen_01_in2 = 0;
-    gen_01_delayCom = 0;
     gen_01_delayAll = 0;
+    gen_01_delayCom = 0;
     gen_01_mix = 0;
     dspexpr_02_in1 = 0;
     dspexpr_02_in2 = 0;
@@ -9195,6 +9591,9 @@ void assign_defaults()
     gen_02_modAmp = 0;
     gen_02_modFreq = 0;
     gen_02_freqScale = 0;
+    gen_02_tuning = 0;
+    gen_02_equalTemperament = 0;
+    gen_02_equalTemperamentMode = 0;
     gen_02_ampSmooth = 0;
     gen_02_freqSmooth = 0;
     gen_02_binSmooth = 0;
@@ -9214,9 +9613,11 @@ void assign_defaults()
     param_10_value = 0.99;
     param_11_value = 0.5;
     param_12_value = 10;
-    param_13_value = 1;
-    param_14_value = 1;
-    param_15_value = 1;
+    numbertilde_01_input_number = 0;
+    numbertilde_01_ramp = 0;
+    param_13_value = 440;
+    param_14_value = 12;
+    param_15_value = 0;
     param_16_value = 1;
     param_17_value = 1;
     param_18_value = 1;
@@ -9229,6 +9630,9 @@ void assign_defaults()
     param_25_value = 1;
     param_26_value = 1;
     param_27_value = 1;
+    param_28_value = 1;
+    param_29_value = 1;
+    param_30_value = 1;
     _currentTime = 0;
     audioProcessSampleCount = 0;
     sampleOffsetIntoNextAudioBuffer = 0;
@@ -9400,39 +9804,39 @@ void assign_defaults()
     gen_02_cycle_50_ph_currentPhase = 0;
     gen_02_cycle_50_ph_conv = 0;
     gen_02_cycle_50_wrap = 0;
-    gen_02_phasor_71_currentPhase = 0;
-    gen_02_phasor_71_conv = 0;
-    gen_02_phasor_77_currentPhase = 0;
-    gen_02_phasor_77_conv = 0;
-    gen_02_phasor_83_currentPhase = 0;
-    gen_02_phasor_83_conv = 0;
-    gen_02_phasor_89_currentPhase = 0;
-    gen_02_phasor_89_conv = 0;
-    gen_02_phasor_95_currentPhase = 0;
-    gen_02_phasor_95_conv = 0;
-    gen_02_phasor_101_currentPhase = 0;
-    gen_02_phasor_101_conv = 0;
-    gen_02_phasor_107_currentPhase = 0;
-    gen_02_phasor_107_conv = 0;
-    gen_02_phasor_113_currentPhase = 0;
-    gen_02_phasor_113_conv = 0;
-    gen_02_phasor_119_currentPhase = 0;
-    gen_02_phasor_119_conv = 0;
-    gen_02_phasor_125_currentPhase = 0;
-    gen_02_phasor_125_conv = 0;
-    gen_02_phasor_131_currentPhase = 0;
-    gen_02_phasor_131_conv = 0;
-    gen_02_phasor_137_currentPhase = 0;
-    gen_02_phasor_137_conv = 0;
-    gen_02_phasor_143_currentPhase = 0;
-    gen_02_phasor_143_conv = 0;
-    gen_02_phasor_149_currentPhase = 0;
-    gen_02_phasor_149_conv = 0;
-    gen_02_phasor_155_currentPhase = 0;
-    gen_02_phasor_155_conv = 0;
-    gen_02_cycle_157_ph_currentPhase = 0;
-    gen_02_cycle_157_ph_conv = 0;
-    gen_02_cycle_157_wrap = 0;
+    gen_02_phasor_79_currentPhase = 0;
+    gen_02_phasor_79_conv = 0;
+    gen_02_phasor_85_currentPhase = 0;
+    gen_02_phasor_85_conv = 0;
+    gen_02_phasor_91_currentPhase = 0;
+    gen_02_phasor_91_conv = 0;
+    gen_02_phasor_97_currentPhase = 0;
+    gen_02_phasor_97_conv = 0;
+    gen_02_phasor_103_currentPhase = 0;
+    gen_02_phasor_103_conv = 0;
+    gen_02_phasor_109_currentPhase = 0;
+    gen_02_phasor_109_conv = 0;
+    gen_02_phasor_115_currentPhase = 0;
+    gen_02_phasor_115_conv = 0;
+    gen_02_phasor_121_currentPhase = 0;
+    gen_02_phasor_121_conv = 0;
+    gen_02_phasor_127_currentPhase = 0;
+    gen_02_phasor_127_conv = 0;
+    gen_02_phasor_133_currentPhase = 0;
+    gen_02_phasor_133_conv = 0;
+    gen_02_phasor_139_currentPhase = 0;
+    gen_02_phasor_139_conv = 0;
+    gen_02_phasor_145_currentPhase = 0;
+    gen_02_phasor_145_conv = 0;
+    gen_02_phasor_151_currentPhase = 0;
+    gen_02_phasor_151_conv = 0;
+    gen_02_phasor_157_currentPhase = 0;
+    gen_02_phasor_157_conv = 0;
+    gen_02_phasor_163_currentPhase = 0;
+    gen_02_phasor_163_conv = 0;
+    gen_02_cycle_165_ph_currentPhase = 0;
+    gen_02_cycle_165_ph_conv = 0;
+    gen_02_cycle_165_wrap = 0;
     gen_02_setupDone = false;
     fftstream_tilde_01_datapos = 0;
     fftstream_tilde_01_fft_lastsize = 0;
@@ -9446,6 +9850,17 @@ void assign_defaults()
     param_10_lastValue = 0;
     param_11_lastValue = 0;
     param_12_lastValue = 0;
+    numbertilde_01_currentInterval = 0;
+    numbertilde_01_currentIntervalInSamples = 0;
+    numbertilde_01_lastValue = 0;
+    numbertilde_01_outValue = 0;
+    numbertilde_01_rampInSamples = 0;
+    numbertilde_01_currentMode = 0;
+    numbertilde_01_smooth_d_prev = 0;
+    numbertilde_01_smooth_prev = 0;
+    numbertilde_01_smooth_index = 0;
+    numbertilde_01_smooth_increment = 0;
+    numbertilde_01_setupDone = false;
     param_13_lastValue = 0;
     param_14_lastValue = 0;
     param_15_lastValue = 0;
@@ -9461,6 +9876,9 @@ void assign_defaults()
     param_25_lastValue = 0;
     param_26_lastValue = 0;
     param_27_lastValue = 0;
+    param_28_lastValue = 0;
+    param_29_lastValue = 0;
+    param_30_lastValue = 0;
     globaltransport_tempo = nullptr;
     globaltransport_tempoNeedsReset = false;
     globaltransport_lastTempo = 120;
@@ -9493,8 +9911,8 @@ void assign_defaults()
     number param_06_value;
     number gen_01_in1;
     number gen_01_in2;
-    number gen_01_delayCom;
     number gen_01_delayAll;
+    number gen_01_delayCom;
     number gen_01_mix;
     number dspexpr_02_in1;
     number dspexpr_02_in2;
@@ -9521,6 +9939,9 @@ void assign_defaults()
     number gen_02_modAmp;
     number gen_02_modFreq;
     number gen_02_freqScale;
+    number gen_02_tuning;
+    number gen_02_equalTemperament;
+    number gen_02_equalTemperamentMode;
     number gen_02_ampSmooth;
     number gen_02_freqSmooth;
     number gen_02_binSmooth;
@@ -9540,6 +9961,8 @@ void assign_defaults()
     number param_10_value;
     number param_11_value;
     number param_12_value;
+    number numbertilde_01_input_number;
+    number numbertilde_01_ramp;
     number param_13_value;
     number param_14_value;
     number param_15_value;
@@ -9555,6 +9978,9 @@ void assign_defaults()
     number param_25_value;
     number param_26_value;
     number param_27_value;
+    number param_28_value;
+    number param_29_value;
+    number param_30_value;
     MillisecondTime _currentTime;
     SampleIndex audioProcessSampleCount;
     SampleIndex sampleOffsetIntoNextAudioBuffer;
@@ -9763,42 +10189,42 @@ void assign_defaults()
     long gen_02_cycle_50_wrap;
     uint32_t gen_02_cycle_50_phasei;
     SampleValue gen_02_cycle_50_f2i;
-    number gen_02_phasor_71_currentPhase;
-    number gen_02_phasor_71_conv;
-    number gen_02_phasor_77_currentPhase;
-    number gen_02_phasor_77_conv;
-    number gen_02_phasor_83_currentPhase;
-    number gen_02_phasor_83_conv;
-    number gen_02_phasor_89_currentPhase;
-    number gen_02_phasor_89_conv;
-    number gen_02_phasor_95_currentPhase;
-    number gen_02_phasor_95_conv;
-    number gen_02_phasor_101_currentPhase;
-    number gen_02_phasor_101_conv;
-    number gen_02_phasor_107_currentPhase;
-    number gen_02_phasor_107_conv;
-    number gen_02_phasor_113_currentPhase;
-    number gen_02_phasor_113_conv;
-    number gen_02_phasor_119_currentPhase;
-    number gen_02_phasor_119_conv;
-    number gen_02_phasor_125_currentPhase;
-    number gen_02_phasor_125_conv;
-    number gen_02_phasor_131_currentPhase;
-    number gen_02_phasor_131_conv;
-    number gen_02_phasor_137_currentPhase;
-    number gen_02_phasor_137_conv;
-    number gen_02_phasor_143_currentPhase;
-    number gen_02_phasor_143_conv;
-    number gen_02_phasor_149_currentPhase;
-    number gen_02_phasor_149_conv;
-    number gen_02_phasor_155_currentPhase;
-    number gen_02_phasor_155_conv;
-    number gen_02_cycle_157_ph_currentPhase;
-    number gen_02_cycle_157_ph_conv;
-    Float64BufferRef gen_02_cycle_157_buffer;
-    long gen_02_cycle_157_wrap;
-    uint32_t gen_02_cycle_157_phasei;
-    SampleValue gen_02_cycle_157_f2i;
+    number gen_02_phasor_79_currentPhase;
+    number gen_02_phasor_79_conv;
+    number gen_02_phasor_85_currentPhase;
+    number gen_02_phasor_85_conv;
+    number gen_02_phasor_91_currentPhase;
+    number gen_02_phasor_91_conv;
+    number gen_02_phasor_97_currentPhase;
+    number gen_02_phasor_97_conv;
+    number gen_02_phasor_103_currentPhase;
+    number gen_02_phasor_103_conv;
+    number gen_02_phasor_109_currentPhase;
+    number gen_02_phasor_109_conv;
+    number gen_02_phasor_115_currentPhase;
+    number gen_02_phasor_115_conv;
+    number gen_02_phasor_121_currentPhase;
+    number gen_02_phasor_121_conv;
+    number gen_02_phasor_127_currentPhase;
+    number gen_02_phasor_127_conv;
+    number gen_02_phasor_133_currentPhase;
+    number gen_02_phasor_133_conv;
+    number gen_02_phasor_139_currentPhase;
+    number gen_02_phasor_139_conv;
+    number gen_02_phasor_145_currentPhase;
+    number gen_02_phasor_145_conv;
+    number gen_02_phasor_151_currentPhase;
+    number gen_02_phasor_151_conv;
+    number gen_02_phasor_157_currentPhase;
+    number gen_02_phasor_157_conv;
+    number gen_02_phasor_163_currentPhase;
+    number gen_02_phasor_163_conv;
+    number gen_02_cycle_165_ph_currentPhase;
+    number gen_02_cycle_165_ph_conv;
+    Float64BufferRef gen_02_cycle_165_buffer;
+    long gen_02_cycle_165_wrap;
+    uint32_t gen_02_cycle_165_phasei;
+    SampleValue gen_02_cycle_165_f2i;
     bool gen_02_setupDone;
     SampleValue fftstream_tilde_01_inWorkspace[2048] = { };
     SampleValue fftstream_tilde_01_outWorkspace[2048] = { };
@@ -9818,6 +10244,17 @@ void assign_defaults()
     number param_10_lastValue;
     number param_11_lastValue;
     number param_12_lastValue;
+    SampleIndex numbertilde_01_currentInterval;
+    SampleIndex numbertilde_01_currentIntervalInSamples;
+    number numbertilde_01_lastValue;
+    number numbertilde_01_outValue;
+    number numbertilde_01_rampInSamples;
+    Int numbertilde_01_currentMode;
+    number numbertilde_01_smooth_d_prev;
+    number numbertilde_01_smooth_prev;
+    number numbertilde_01_smooth_index;
+    number numbertilde_01_smooth_increment;
+    bool numbertilde_01_setupDone;
     number param_13_lastValue;
     number param_14_lastValue;
     number param_15_lastValue;
@@ -9833,6 +10270,9 @@ void assign_defaults()
     number param_25_lastValue;
     number param_26_lastValue;
     number param_27_lastValue;
+    number param_28_lastValue;
+    number param_29_lastValue;
+    number param_30_lastValue;
     signal globaltransport_tempo;
     bool globaltransport_tempoNeedsReset;
     number globaltransport_lastTempo;

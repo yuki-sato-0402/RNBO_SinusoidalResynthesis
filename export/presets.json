@@ -6,52 +6,52 @@
         "value": 1
       },
       "amp10": {
-        "value": 1
+        "value": 0
       },
       "amp11": {
-        "value": 1
+        "value": 0
       },
       "amp12": {
-        "value": 1
+        "value": 0
       },
       "amp13": {
-        "value": 1
+        "value": 0
       },
       "amp14": {
-        "value": 1
+        "value": 0
       },
       "amp15": {
-        "value": 1
+        "value": 0
       },
       "amp2": {
-        "value": 1
+        "value": 0
       },
       "amp3": {
-        "value": 1
+        "value": 0
       },
       "amp4": {
-        "value": 1
+        "value": 0
       },
       "amp5": {
-        "value": 1
+        "value": 0
       },
       "amp6": {
-        "value": 1
+        "value": 0
       },
       "amp7": {
-        "value": 1
+        "value": 0
       },
       "amp8": {
-        "value": 1
+        "value": 0
       },
       "amp9": {
-        "value": 1
+        "value": 0
       },
       "ampSmooth": {
-        "value": 0.99
+        "value": 0.9800000000000002
       },
       "binSmooth": {
-        "value": 0.5
+        "value": 0.5000000000000001
       },
       "delayAll": {
         "value": 5
@@ -62,26 +62,35 @@
       "dryWet": {
         "value": 100
       },
+      "equalTemperament": {
+        "value": 12
+      },
+      "equalTemperamentMode": {
+        "value": 1
+      },
       "freqScale": {
         "value": 1
       },
       "freqSmooth": {
-        "value": 0.99
+        "value": 0.9600000000000002
       },
       "mix": {
-        "value": 10
+        "value": 0
       },
       "modAmp": {
-        "value": 10.000000000000002
+        "value": 0
       },
       "modFreq": {
-        "value": 1.001
+        "value": 1
       },
       "modPanFreq": {
-        "value": 1
+        "value": 10
       },
       "stereoMode": {
         "value": 0
+      },
+      "tuning": {
+        "value": 440
       }
     }
   }

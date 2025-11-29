@@ -137,8 +137,50 @@ CustomAudioEditor::CustomAudioEditor (CustomAudioProcessor& p, juce::AudioProces
 
     addAndMakeVisible(modPanFreqLabel);
     modPanFreqLabel.setText ("modPanFreq", juce::dontSendNotification);
-    modPanFreqLabel.setJustificationType(juce::Justification::centred); 
+    modPanFreqLabel.setJustificationType(juce::Justification::centred);
+    
+    addAndMakeVisible(equalTemperamentModeButton);
+    equalTemperamentModeAttachment.reset (new ButtonAttachment (valueTreeState, "equalTemperamentMode", equalTemperamentModeButton));
+    equalTemperamentModeButton.setButtonText("equalTemperament\nMode");
+    
 
+    addAndMakeVisible(equalTemperamentSlider);
+    dial12Attachment.reset (new SliderAttachment (valueTreeState, "equalTemperament", equalTemperamentSlider));
+    equalTemperamentSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);  
+    equalTemperamentSlider.setTextValueSuffix ("tone");
+    equalTemperamentSlider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, equalTemperamentSlider.getTextBoxWidth(), equalTemperamentSlider.getTextBoxHeight());
+    equalTemperamentSlider.setColour(juce::Slider::rotarySliderOutlineColourId, juce::Colours::white);
+    equalTemperamentSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colours::darkgreen.withAlpha(0.75f));
+    equalTemperamentSlider.setColour(juce::Slider::thumbColourId , juce::Colours::darkgreen.brighter(1.5));
+    equalTemperamentSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colours::white);
+    equalTemperamentSlider.setColour(juce::Slider::textBoxOutlineColourId , juce::Colours::white);
+
+    addAndMakeVisible(equalTemperamentLabel);
+    equalTemperamentLabel.setText ("equalTemperament", juce::dontSendNotification);
+    equalTemperamentLabel.setJustificationType(juce::Justification::centred);   
+
+    addAndMakeVisible(tuningSlider);
+    dial13Attachment.reset (new SliderAttachment (valueTreeState, "tuning", tuningSlider));
+    tuningSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);    
+    tuningSlider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, tuningSlider.getTextBoxWidth(), tuningSlider.getTextBoxHeight());
+    tuningSlider.setColour(juce::Slider::rotarySliderOutlineColourId, juce::Colours::white);
+    tuningSlider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colours::darkgreen.withAlpha(0.75f));
+    tuningSlider.setColour(juce::Slider::thumbColourId , juce::Colours::darkgreen.brighter(1.5));
+    tuningSlider.setColour(juce::Slider::textBoxTextColourId, juce::Colours::white);
+    tuningSlider.setColour(juce::Slider::textBoxOutlineColourId , juce::Colours::white);
+
+    equalTemperamentModeButton.onClick = [this]()
+    {
+        bool enabled = equalTemperamentModeButton.getToggleState();
+        equalTemperamentSlider.setEnabled(enabled);
+        tuningSlider.setEnabled(enabled);
+    };
+
+
+    addAndMakeVisible(tuningLabel);
+    tuningLabel.setText ("tuning", juce::dontSendNotification);
+    tuningLabel.setJustificationType(juce::Justification::centred); 
+    
     addAndMakeVisible(reverbLabel);
     reverbLabel.setText ("reverb", juce::dontSendNotification);
     reverbLabel.setJustificationType(juce::Justification::centred); 
@@ -196,7 +238,7 @@ void CustomAudioEditor::paint (Graphics& g)
     g.fillAll(juce::Colours::darkgreen); 
     auto area = getLocalBounds();
     g.setColour(juce::Colours::white);
-    g.drawRect(static_cast<int>(padding * 3.5) + (componentWidth2 * 3), (area.getHeight() / 4) * 3 - 10, 
+    g.drawRect(static_cast<int>(padding * 4.5) + (componentWidth2 * 4), (area.getHeight() / 4) * 3 - 10, 
               (componentWidth2 * 4) + (padding * 4), componentHeight + padding + 10, 2);
 
 }
@@ -208,7 +250,7 @@ void CustomAudioEditor::resized()
     auto area = getLocalBounds();
     padding = 20; 
     componentWidth1 = (area.getWidth() - 40) / 15;
-    componentWidth2 = (area.getWidth() - 160) / 7; 
+    componentWidth2 = (area.getWidth() - 180) / 8; 
     componentHeight = (area.getHeight() - 100) / 4;
 
     //for (int i = 0; i < numSliders; ++i){
@@ -224,10 +266,13 @@ void CustomAudioEditor::resized()
     freqScaleSlider.setBounds(ampSmoothSlider.getRight() + padding,  faderBank.getBottom() + padding,  componentWidth2 , componentHeight);
     modFreqSlider.setBounds(freqScaleSlider.getRight()+ padding, faderBank.getBottom() + padding,  componentWidth2 , componentHeight);
     modAmpSlider.setBounds(modFreqSlider.getRight() + padding, faderBank.getBottom() + padding,  componentWidth2 , componentHeight);
+    stereoModeBox.setBounds(modAmpSlider.getRight() + padding, faderBank.getBottom() + padding + 40 ,  componentWidth2 , componentHeight / 4);
 
-    stereoModeBox.setBounds(padding, dryWetSlider.getBottom() + padding + 40 ,  componentWidth2 , componentHeight / 4);
-    modPanFreqSlider.setBounds(stereoModeBox.getRight() + padding, dryWetSlider.getBottom() + padding,  componentWidth2 , componentHeight);
-    reverbLabel.setBounds(modPanFreqSlider.getRight()  + stereoModeBox.getRight() + padding, dryWetSlider.getBottom() + padding, componentWidth2, componentHeight);
+    modPanFreqSlider.setBounds(padding, dryWetSlider.getBottom() + padding,  componentWidth2 , componentHeight);
+    equalTemperamentModeButton.setBounds(modPanFreqSlider.getRight() + padding, dryWetSlider.getBottom() + padding + (componentHeight / 4), componentWidth2, componentHeight / 3);
+    equalTemperamentSlider.setBounds(equalTemperamentModeButton.getRight() + padding, dryWetSlider.getBottom()  + padding, componentWidth2, componentHeight);
+    tuningSlider.setBounds(equalTemperamentSlider.getRight() + padding, dryWetSlider.getBottom() + padding, componentWidth2, componentHeight);
+    reverbLabel.setBounds(tuningSlider.getRight() + padding, dryWetSlider.getBottom() + padding, componentWidth2, componentHeight);
     mixSlider.setBounds(reverbLabel.getRight() + padding, dryWetSlider.getBottom() + padding,  componentWidth2 , componentHeight);
     delayAllSlider.setBounds(mixSlider.getRight() + padding, dryWetSlider.getBottom() + padding,  componentWidth2 , componentHeight);
     delayComSlider.setBounds(delayAllSlider.getRight() + padding, dryWetSlider.getBottom() + padding,  componentWidth2 , componentHeight);
@@ -242,6 +287,8 @@ void CustomAudioEditor::resized()
     modAmpLabel.setBounds(modAmpSlider.getX(), modAmpSlider.getY()- 10, modAmpSlider.getWidth(), modAmpSlider.getTextBoxHeight() );
     stereoModeLabel.setBounds(stereoModeBox.getX(), stereoModeBox.getY()- 40, stereoModeBox.getWidth(), stereoModeBox.getHeight() );
     modPanFreqLabel.setBounds(modPanFreqSlider.getX(), modPanFreqSlider.getY()- 10, modPanFreqSlider.getWidth(), modPanFreqSlider.getTextBoxHeight() );  
+    equalTemperamentLabel.setBounds(equalTemperamentSlider.getX() - 10, equalTemperamentSlider.getY()- 10, equalTemperamentSlider.getWidth() + 20, equalTemperamentSlider.getTextBoxHeight() );
+    tuningLabel.setBounds(tuningSlider.getX(), tuningSlider.getY()- 10, tuningSlider.getWidth(), tuningSlider.getTextBoxHeight() );
     mixLabel.setBounds(mixSlider.getX(), mixSlider.getY()- 10, mixSlider.getWidth(), mixSlider.getTextBoxHeight() );
     delayAllLabel.setBounds(delayAllSlider.getX(), delayAllSlider.getY()- 10, delayAllSlider.getWidth(), delayAllSlider.getTextBoxHeight() );
     delayComLabel.setBounds(delayComSlider.getX(), delayComSlider.getY()- 10, delayComSlider.getWidth(), delayComSlider.getTextBoxHeight() );   

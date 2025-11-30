@@ -24,6 +24,10 @@ For *Getting Started*, please refer to the original repository. Also included in
 - **modAmp** : You can control the amplitude of the modulator.
 - **stereoMode** : **Odd and even columns** is a mode where the first sine wave, second sine wave, and so on are assigned alternately to the left and right channels. "modulation" is a mode that performs panning modulation on the left and right, but it is performed by a modulator with 15 individual delay times, so it can produce a smooth sound.
 - **modPanFreq** : This parameter is only available when **stereoMode** is **modulation**. It controls the frequency of the panning modulator.
+- **equalTemperamentMode** : this mode maps each of the 15 input frequencies to the nearest pitch in an N-tone equal temperament scale. Both the reference frequency (e.g., A4 = 440 Hz) and the number of divisions per octave (N) can be freely specified. This mode takes each input frequency 
+𝑓 and converts it to the closest equal-tempered frequency defined by those parameters.
+- **equalTemperament** : You can specify the number of divisions in the equal temperament.
+- **tuning** : You can specify the equal temperament reference frequency.
 
 ### Reverb parameters
 The reverb effect used in this system is [RNBO_SchroederReverb](https://github.com/yuki-sato-0402/RNBO_SchroederReverb). Please check it out.

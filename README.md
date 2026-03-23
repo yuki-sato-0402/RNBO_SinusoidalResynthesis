@@ -1,13 +1,15 @@
 # RNBO_SinusoidalResynthesis
-Sinusoidal Resynthesis System by Rnbo (Max Msp)
+**A real-time Sinusoidal Resynthesis plugin (VST3 / AU / Standalone)**
 
 The input signal is analyzed using FFT, and the frequency data with the largest amplitude is estimated in order, and they are assigned to the frequency and amplitude of individual sine waves.
 
-
-I have also arranged the code to use the [AudioProcessorValueTreeState](https://docs.juce.com/master/classAudioProcessorValueTreeState.html).
-Built from the [rnbo.example.juce](https://github.com/Cycling74/rnbo.example.juce).  
-
-For *Getting Started*, please refer to the original repository. Also included in this repository is the C++ program output from RNBO in `export/`. And Max patch is included in `patches/`.
+## Key Features
+- **Multi-Format Support**: Available as a **VST3 plugin, AU (Audio Unit) plugin, and Standalone application**.
+- **15-Voice Additive Synthesis**: Individually control the amplitude of the top 15 estimated peak frequencies.
+- **Pitch Manipulation**: Scale frequencies or snap them to a customizable **N-tone Equal Temperament** scale with adjustable reference tuning (e.g., A=440Hz).
+  
+Built from the rnbo.example.juce template.
+The C++ source exported from RNBO is in export/, and the original Max patch is in patches/.
 
 ## Demonstration
 [Youtube<img width="1012" height="740" alt="Screenshot 2026-01-14 at 22 00 48" src="https://github.com/user-attachments/assets/9e236648-5970-4087-a645-6de2fe0ff68e" />](https://youtu.be/aMNIJJ8orLw?si=EuhGLUGIEdSIIFpn)

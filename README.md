@@ -7,6 +7,8 @@ The input signal is analyzed using FFT, and the frequency data with the largest 
 - **Multi-Format Support**: Available as a **VST3 plugin, AU (Audio Unit) plugin, and Standalone application**.
 - **15-Voice Additive Synthesis**: Individually control the amplitude of the top 15 estimated peak frequencies.
 - **Pitch Manipulation**: Scale frequencies or snap them to a customizable **N-tone Equal Temperament** scale with adjustable reference tuning (e.g., A=440Hz).
+- **JUCE Integration**: Uses `AudioProcessorValueTreeState` for robust parameter management and full DAW automation.
+
   
 Built from the rnbo.example.juce template.
 The C++ source exported from RNBO is in export/, and the original Max patch is in patches/.
